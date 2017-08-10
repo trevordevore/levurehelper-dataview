@@ -1,0 +1,113 @@
+script "DataView Field Editor Behavior"
+constant kKeyNumsThatScroll = "65308,65309,65310,65311"
+--on escapeKey
+--  _CloseFieldEditor false, param(0)
+--end escapeKey
+
+
+on closeField
+  _CloseFieldEditor true, param(0)
+end closeField
+
+
+on exitField
+  _CloseFieldEditor true, param(0)
+end exitField
+
+
+on returnInField
+  if the autotab of me then
+    _CloseFieldEditor true, param(0)
+  else
+    pass returnInField
+  end if
+end returnInField
+
+
+on enterInField
+  if the autotab of me then
+    _CloseFieldEditor true, param(0)
+  else
+    pass enterInField
+  end if
+end enterInField
+
+
+on tabKey
+  if the autotab of me then
+    _CloseFieldEditorAndOpenNext param(0)
+  else
+    pass tabkey
+  end if
+end tabKey
+
+local sScrollingIntoView
+
+on rawKeyDown pKey
+  ## scroll into view if not in view
+    set the wholematches to true
+  if sScrollingIntoView is not true and pKey is not among the items of kKeyNumsThatScroll then
+    put true into sScrollingIntoView
+    if not the visible of the dvRowControl of me or (the selectedLoc is a point and the selectedLoc is not within the viewProp["content window rect"] of the dvControl of me) then
+      ScrollSelectionIntoView
+    end if
+    put false into sScrollingIntoView
+  end if
+
+  pass rawKeyDown
+end rawKeyDown
+
+
+on selectionChanged
+   ## don't pass as selectionChanged is reserved for group
+   ## developer can override behavior to process selectionChanged
+end selectionChanged
+
+
+/**
+* |brief Sent when field content is updated by user.
+*
+* We are interested in whether or not the height of the field equals the content height.
+* If it is not then resize.
+*/
+on textChanged
+  if the formattedHeight of me is not the height of me then
+    ResizeToFitContent
+  end if
+end textChanged
+
+
+on TextChangedByScript pAction
+  ResizeToFitContent
+end TextChangedByScript
+
+
+command ResizeToFitContent
+  local theFormattedHeight, thePadding
+  local theWidth, theTempHeight, theSelectedChunk
+  local theRow
+
+  if there is not a (the long id of me) then exit ResizeToFitContent ## in case underlying control is deleted
+  CancelMessage "ResizeToFitContent" ## throttle
+
+  lock screen
+
+  put the selectedChunk into theSelectedChunk
+
+  ## Resize the row which will resize the editor
+  put the dvRow of the dvRowControl of me into theRow
+  FlagRowForResize theRow
+  RenderVisibleRows
+
+  if theSelectedChunk is not empty then
+    try
+      select theSelectedChunk ## this throws errors when resizing after a delete
+    catch e
+    end try
+  end if
+
+  # 2015-12-21: Added so we could move objects along with the DataView.
+  dispatch "DataViewDidUpdateView" to the dvControl of me
+
+  unlock screen
+end ResizeToFitContent
