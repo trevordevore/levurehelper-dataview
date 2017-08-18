@@ -2293,11 +2293,12 @@ command dvMouseDownBefore pMouseBtnNum
   # If user is holding down command or option then mouseDown is sent to an editable field.
   if word 1 of the target is "field" and not the lockText of the target then exit dvMouseDownBefore
 
-  local theRow, theIndex, theControl
+  local theRow, theIndex, theControl, canSelectTarget
 
   ## figure out the row clicked on
   put empty into theIndex
   put the dvRowControl of the target into theControl
+  put the dvCanSelect of the target into canSelectTarget
   if theControl is not empty then
     put the dvRow of theControl into theRow
   end if
@@ -2320,7 +2321,7 @@ command dvMouseDownBefore pMouseBtnNum
   ## Allow for rows that can't be clicked.
   ## Send message to target so developer can determine whether or not to select
   ## based on what was clicked on.
-  if theControl is not empty AND the dvCanSelect of the target is false then return empty
+  if theControl is not empty AND not canSelectTarget then return empty
 
   put false into sMouseDownA["selection changed"]
 
