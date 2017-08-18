@@ -2298,7 +2298,7 @@ command dvMouseDownBefore pMouseBtnNum
   ## figure out the row clicked on
   put empty into theIndex
   put the dvRowControl of the target into theControl
-  put the dvCanSelect of the target into canSelectTarget
+  put the dvCanSelect of the target is not false into canSelectTarget
   if theControl is not empty then
     put the dvRow of theControl into theRow
   end if
