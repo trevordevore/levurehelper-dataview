@@ -1243,14 +1243,14 @@ end dvRowControls
 
 
 /**
-* \brief Dispatchs the selectionChanged message to the behavior instance.
+* \brief Dispatchs the selectedRowChanged message to the behavior instance.
 *
 * \param pPreviouslyHilitedRows The list of rows that were hilited prior to the selection changing.
 *
 * return empty
 */
 private command _SelectionChanged pPreviouslyHilitedRows
-  dispatch "selectionChanged" with sViewPropsA["hilited rows"], pPreviouslyHilitedRows
+  dispatch "selectedRowChanged" with sViewPropsA["hilited rows"], pPreviouslyHilitedRows
   return empty
 end _SelectionChanged
 
