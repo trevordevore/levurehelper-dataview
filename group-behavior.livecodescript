@@ -4851,7 +4851,7 @@ private command _PositionDropIndicator pMouseH, pMouseV
         end if
 
         if theTargetControl is empty then
-          put the dvAcceptsDrop of me into showDropIndicator
+          put the dvAcceptsDrop of me is not false into showDropIndicator
           put 0 into sDropStructure["dropped after row"] ## no controls in list
         else
           local theItemNo
