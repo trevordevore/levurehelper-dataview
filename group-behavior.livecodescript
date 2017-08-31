@@ -4675,12 +4675,11 @@ setprop dvTrackDragReorder [pOriginatingRows] pBoolean
       put the rect of theDropIndicatorGroup into sDropStructure["default drop indicator rect"]
       insert script of stack "DataView Track Drag and Drop Behavior" into front
 
-      set the dvTargetControl of group "dvDropIndicator" of me to the long ID of me
+      dvRegisterControlForDragMessages the long id of me
 
       ## initialize index mouse is over
       dvDragMove the mouseH, the mouseV
     else
-      remove script of stack "DataView Track Drag and Drop Behavior" from front
       set the visible of group "dvDropIndicator" of me to false
       put empty into sDropStructure
 
@@ -4693,6 +4692,7 @@ setprop dvTrackDragReorder [pOriginatingRows] pBoolean
       end if
 
       put false into sDropStructure["tracking"]
+      put empty into sViewPropsA["select on mouseUp"] # this is set in dvMouseDownBefore. dvMouseUp won't be sent if a drag starts, however.
     end if
   end if
 
@@ -4715,9 +4715,23 @@ end dvTrackDragReorder
 *
 */
 on dvDragEnd
-  set the dvTrackDragReorder of me to false
-  put empty into sViewPropsA["select on mouseUp"] # this is set in dvMouseDownBefore. dvMouseUp won't be sent if a drag starts, however.
+  # Any data grid that had dvTrackDragReorder turned on during this drag event must be cleaned up.
+  dvResetViewsAffectedDuringDragOperation
+  remove script of stack "DataView Track Drag and Drop Behavior" from front
 end dvDragEnd
+
+
+/**
+* \brief Implementation of dragLeave. Called from frontscript.
+*
+* Check if mouse is outside of control on dragLeave. When mouse leaves window we don't want drag indicator showing.
+*
+*/
+command dvDragLeave
+  if the mouseH,the mouseV is not within the viewProp["content window rect"] of me then
+    _SetDropIndicatorVisibility false
+  end if
+end dvDragLeave
 
 
 /**
@@ -4731,8 +4745,6 @@ end dvDragEnd
 on dvDragDrop
   local processTheDrop, theDropStructure
 
-  put empty into sViewPropsA["select on mouseUp"] # this is set in dvMouseDownBefore. dvMouseUp won't be sent if a drag starts, however.
-
   ## Cache before we clean up
   if the dragAction is "move" AND sDropStructure["dropped after row"] is empty then put false into processTheDrop
   else put the dragAction is not "none" into processTheDrop  ## This works better as it takes into account dropping data onto empty view from other source.
@@ -4740,7 +4752,7 @@ on dvDragDrop
 
   ## If some other control displays a dialog during dragDrop, dragMove will still be sent
   ## if the mouse moves within the dialog. We don't want to process those any longer at this point.
-  set the dvTrackDragReorder of me to false
+  dvFreezeMouseRelatedDragMessagesPriorToCleanup
 
   if processTheDrop then
     local theNewStartingRow
@@ -4789,19 +4801,6 @@ on dvDragMove pMouseH,pMouseV
   end try
   put false into sViewPropsA["running actions"]["dragmove"]
 end dvDragMove
-
-
-/**
-* \brief Implementation of dragLeave. Called from frontscript.
-*
-* Check if mouse is outside of control on dragLeave. When mouse leaves window we don't want drag indicator showing.
-*
-*/
-command dvDragLeave
-  if the mouseH,the mouseV is not within the viewProp["content window rect"] of me then
-    _SetDropIndicatorVisibility false
-  end if
-end dvDragLeave
 
 
 /**
