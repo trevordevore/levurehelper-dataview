@@ -1978,6 +1978,16 @@ private function _ColorToRGB pColor
 end _ColorToRGB
 
 
+
+/**
+Summary: Tells you whether the provided list of modifier keys are depressed.
+
+pModifiers: List of keys to check. Any combination of "shift", "option", "command", "control" or "option-control".
+
+Description: "option-control" will check for option on macos and control on other platforms. Use this for copy operations.
+
+Returns: true/false
+*/
 private function _IsThisModifierSetActive pModifiers
   local theState
 
@@ -1986,7 +1996,7 @@ private function _IsThisModifierSetActive pModifiers
   set the wholeMatches to true
 
   put the optionKey into theState
-  if "option" is among the items of pModifiers then
+  if "option" is among the items of pModifiers or ("option-control" is among the items of pModifiers and the platform is "macos") then
     if theState is "up" then
       return false
     end if
@@ -2003,7 +2013,7 @@ private function _IsThisModifierSetActive pModifiers
     return false
   end if
 
-  if the platform is "MacOS" then
+  if the platform is "macos" then
     put the commandKey into theState
     if "command" is among the items of pModifiers then
       if theState is "up" then
@@ -2023,7 +2033,7 @@ private function _IsThisModifierSetActive pModifiers
     end if
   else
     put the commandKey into theState
-    if "command" is among the items of pModifiers or "control" is among the items of pModifiers then
+    if "command" is among the items of pModifiers or "control" is among the items of pModifiers or "option-control" is among the items of pModifiers then
       if theState is "up" then
         return false
       end if
@@ -2386,7 +2396,7 @@ command dvMouseDownBefore pMouseBtnNum
       ## If clicking on a selected control then delay deselecting until mouseUp.
       ## This allows for drag/drop of multi controls.
       ## Only applies if no modifier is down or option is down as option can be used for dragging.
-      if the viewProp["multiple lines"] of me and theRow is among the items of sViewPropsA["hilited rows"] AND ( _IsThisModifierSetActive("") OR _IsThisModifierSetActive("option") ) then
+      if the viewProp["multiple lines"] of me and theRow is among the items of sViewPropsA["hilited rows"] AND ( _IsThisModifierSetActive("") OR _IsThisModifierSetActive("option-control") ) then
         put true into sViewPropsA["deselect on mouseUp"]
       else
         # We only need to select if control isn't already the selected row
