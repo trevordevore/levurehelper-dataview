@@ -5390,6 +5390,7 @@ command CreateFieldEditorForField pField, pKey
   set the textAlign of the templatefield to the effective textAlign of pField
   set the textFont of the templatefield to the effective textFont of pField
   set the textSize of the templatefield to the effective textSize of pField
+  set the textHeight of the templatefield to the textHeight of pField
   set the textStyle of the templatefield to the effective textStyle of pField
   set the fixedLineHeight of the templatefield to the fixedLineHeight of pField
   set the textColor of the templateField to the textColor of pField
