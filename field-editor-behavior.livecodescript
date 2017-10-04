@@ -1,16 +1,26 @@
 script "DataView Field Editor Behavior"
 constant kKeyNumsThatScroll = "65308,65309,65310,65311"
+
+local sFormattedHeight
+
 --on escapeKey
 --  _CloseFieldEditor false, param(0)
 --end escapeKey
 
 
+on openField
+  put the formattedHeight of me into sFormattedHeight
+end openField
+
+
 on closeField
+  delete local sFormattedHeight
   _CloseFieldEditor true, param(0)
 end closeField
 
 
 on exitField
+  delete local sFormattedHeight
   _CloseFieldEditor true, param(0)
 end exitField
 
@@ -71,8 +81,9 @@ end selectionChanged
 * If it is not then resize.
 */
 on textChanged
-  if the formattedHeight of me is not the height of me then
+  if the formattedHeight of me is not sFormattedHeight then
     ResizeToFitContent
+    put the formattedHeight of me into sFormattedHeight
   end if
 end textChanged
 
