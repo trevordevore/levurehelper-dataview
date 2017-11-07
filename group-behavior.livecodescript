@@ -54,7 +54,7 @@ command InspectInternally
 end InspectInternally
 
 
-on preopenControl
+before preopenControl
   _Init
 
   ## mobile
@@ -65,7 +65,7 @@ on preopenControl
 end preopenControl
 
 
-on closeControl
+after closeControl
   if the environment is "mobile" then
     if sScrollerID is among the lines of mobileControls() then
       mobileControlDelete sScrollerID
