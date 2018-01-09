@@ -3153,7 +3153,6 @@ end _ConfigureScrollbars
 */
 on scrollbarDrag pValue
   if the short name of the target is "dvVScrollbar" then
-    --      put pValue && the viewProp["vscroll"] of me && the viewProp["content height"] of me & cr after msg
     if pValue is not the viewProp["vscroll"] of me then
       lock messages
       _SetVScroll pValue ## in case messages are locked
@@ -3200,13 +3199,8 @@ private command _SetVScroll pValue
 
   ## Should we enable this for Lion as well?
   if the environment is not "mobile" then
-    --      put max( \
-        --            min(pValue, the viewProp["content height"] of me + the viewProp["content bottom padding"] of me - _GetContentWindowHeight()), \
-        --            0 - the viewProp["content top padding"] of me) into pValue
     put max(0, min(pValue, the viewProp["content height"] of me - _GetContentWindowHeight())) into pValue
   end if
-
-  --   put pValue && the viewProp["vscroll"] of me && the viewProp["content height"] of me & cr after msg
 
   lock messages
   set the viewProp["vscroll"] of me to pValue
@@ -3442,8 +3436,6 @@ private command _RefreshRowCacheKeys pRemoveStaleCacheKeys
   set the wholematches to true
 
   put the viewProp["cache"] of me is among the items of "eager,lazy" into refreshKeys
-  --   put the viewProp["cache"] of me is among the items of "eager,lazy" OR \
-        --         (the viewProp["cache"] of me is "none" and not the viewProp["fixed row height"] of me) into refreshKeys
   put pRemoveStaleCacheKeys is true into pRemoveStaleCacheKeys
 
   if refreshKeys then
