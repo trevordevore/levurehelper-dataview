@@ -2889,6 +2889,12 @@ command RenderRows pRows
 
       _DispatchLayoutControl theControl, theRow, theRowWidth, true
       put true into updateTheScrollbars
+    else if the viewProp["cache"] of me is "none" and not the viewProp["fixed row height"] of me then
+      ## Control isn't visible on screen. NULL the height so it's new height is taken into account next time it is rendered.
+      if sViewPropsA["controls"]["control height cache"][theRow] is not NULL then
+        put true into updateTheScrollbars
+        put NULL into sViewPropsA["controls"]["control height cache"][theRow]
+      end if
     end if
   end repeat
 
