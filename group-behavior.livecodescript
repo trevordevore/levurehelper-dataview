@@ -2852,7 +2852,7 @@ end RefreshViewRows
 */
 command RenderRows pRows
   local theRow, theIndex
-  local theDataA, theControl, theStyle
+  local theDataA, theControl, theStyle, theTopLeft
   local updateTheScrollbars = "false"
   local msgsAreLocked, theRowWidth, theCacheKey
 
@@ -2866,26 +2866,41 @@ command RenderRows pRows
 
   ## Update existing rows
   repeat for each item theRow in pRows
+    # Reset data array each time through loop
+    put empty into theDataA
+
+    dispatch "DataForRow" to me with theRow, theDataA, theStyle ## style is ignored for a refresh (dispatch forces target)
+
     put _DispatchCacheKeyForRow(theRow) into theCacheKey # don't use cached key
     put sViewPropsA["controls"]["cache"][theCacheKey]["control"] into theControl
 
     if theControl is not empty then
-      # Reset data array each time through loop
-      put empty into theDataA
-      put empty into theStyle
+      if the uTemplateStyle of theControl is not theStyle then
+        # Control isn't valid for row type. Move back into cache and get a new control
+        put the topleft of theControl into theTopLeft
 
-      ## Since we are rendering from scratch dvControlHasBeenRendered should return false during the next two messages
-      lock messages
-      set the dvDataCache of theControl to empty
-      unlock messages
+        _CleanupControl theCacheKey, theRow, theControl
 
-      ## Implemented by instance of behavior
-      dispatch "DataForRow" to me with theRow, theDataA, theStyle ## style is ignored for a refresh (dispatch forces target)
-      dispatch "FillInData" to theControl with theDataA, theRow
+        _SetupRowControl theRow, empty, true
+        put the result into theControl
+        set the topleft of theControl to theTopLeft
+      else
+        # Reset data array each time through loop
+        put empty into theStyle
 
-      lock messages
-      set the dvDataCache of theControl to NULL
-      unlock messages
+        ## Since we are rendering from scratch dvControlHasBeenRendered should return false during the next two messages
+        lock messages
+        set the dvDataCache of theControl to empty
+        unlock messages
+
+        ## Implemented by instance of behavior
+
+        dispatch "FillInData" to theControl with theDataA, theRow
+
+        lock messages
+        set the dvDataCache of theControl to NULL
+        unlock messages
+      end if
 
       _DispatchLayoutControl theControl, theRow, theRowWidth, true
       put true into updateTheScrollbars
@@ -2951,22 +2966,7 @@ command DeleteRows pRows
       put sViewPropsA["controls"]["cache"][theCacheKey]["control"] into theControl
 
       if there is a theControl then
-        if clearTheCache then
-          _MoveCachedControlBackIntoCacheBin theCacheKey, theRow # this sends cleanup message
-        else
-          # Send message to control telling it to clean up after itself
-          dispatch "CleanupAfterRowControl" to theControl
-
-          lock messages
-          if the long id of theControl is in the focusedObject then
-            focus on graphic "dvBackground" of me ## engine doesn't like the focused control in a group being deleted
-          end if
-          delete theControl
-          unlock messages
-
-          delete local sViewPropsA["controls"]["row cache keys"][theRow] # break link between row and cache key
-          delete local sViewPropsA["controls"]["cache"][theCacheKey]
-        end if
+        _CleanupControl theCacheKey, theRow, theControl
       else
         # control doesn't exist but we still need to purge the cachekey stuff
         delete local sViewPropsA["controls"]["row cache keys"][theRow] # break link between row and cache key
@@ -2997,6 +2997,31 @@ command DeleteRows pRows
 
   return empty
 end DeleteRows
+
+
+/**
+Summary: Handles cleanup of a control based on cache setting.
+*/
+private command _CleanupControl pCacheKey, pRow, pControl
+  if the viewProp["cache"] of me is not among the items of "eager,lazy" then
+    _MoveCachedControlBackIntoCacheBin pCacheKey, pRow # this sends cleanup message
+  else
+    # Send message to control telling it to clean up after itself
+    dispatch "CleanupAfterRowControl" to pControl
+
+    lock messages
+    if the long id of pControl is in the focusedObject then
+      focus on graphic "dvBackground" of me ## engine doesn't like the focused control in a group being deleted
+    end if
+    delete pControl
+    unlock messages
+
+    delete local sViewPropsA["controls"]["row cache keys"][pRow] # break link between row and cache key
+    delete local sViewPropsA["controls"]["cache"][pCacheKey]
+  end if
+
+  return empty
+end _CleanupControl
 
 
 /**
