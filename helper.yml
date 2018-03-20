@@ -1,19 +1,12 @@
 behaviors:
-  1:
-    filename: group-behavior.livecodescript
-  2:
-    filename: scrollbar-behavior.livecodescript
-  3:
-    filename: track-drag-drop-behavior.livecodescript
-  4:
-    filename: field-editor-behavior.livecodescript
-  5:
-    filename: drop-indicator-behavior.livecodescript
+  - filename: group-behavior.livecodescript
+  - filename: scrollbar-behavior.livecodescript
+  - filename: track-drag-drop-behavior.livecodescript
+  - filename: field-editor-behavior.livecodescript
+  - filename: drop-indicator-behavior.livecodescript
 frontscripts:
-  1:
-    filename: field-editor-frontscript.livecodescript
+  - filename: field-editor-frontscript.livecodescript
     autoload: false
 ui:
-  1:
-    filename: dataview.livecode
+  - filename: dataview.livecode
     encrypt: false
