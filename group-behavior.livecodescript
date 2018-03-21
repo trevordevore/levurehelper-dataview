@@ -2429,6 +2429,7 @@ command dvMouseDownBefore pMouseBtnNum
       _SelectionChanged sMouseDownA["previously hilited rows"]
       put empty into sMouseDownA
     else
+      unlock screen
       put empty into sMouseDownA
     end if
   end if
