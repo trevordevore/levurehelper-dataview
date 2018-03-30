@@ -1,5 +1,6 @@
 behaviors:
   - filename: group-behavior.livecodescript
+  - filename: dataview_controller.livecodescript
   - filename: scrollbar-behavior.livecodescript
   - filename: track-drag-drop-behavior.livecodescript
   - filename: field-editor-behavior.livecodescript
