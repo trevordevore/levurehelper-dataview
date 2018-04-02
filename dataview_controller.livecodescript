@@ -59,6 +59,19 @@ setProp uSelectedId pId
 end uSelectedId
 
 
+getProp uRowOfIdRecord[pId]
+  local tRow
+
+  put _RowOfId(pId) into tRow
+
+  if tRow > 0 then
+    return sDataA[tRow]
+  else
+    return empty
+  end if
+end uRowOfIdRecord
+
+
 setProp uRowOfIdRecord[pId] pRecordA
   local tRow
 
