@@ -1625,7 +1625,8 @@ private command _ScrollRow pRow, pPlacement, pForceScroll
           lock messages
           set the thumbPosition of scrollbar "dvVScrollbar" of me to theNewVScroll
           set the lockMessages to msgsAreLocked
-          _SetVScroll theNewVScroll
+
+          _SetVScrollForPlatform theNewVScroll
 
           # Use bottom to determine if control has made it into place. The bottom
           # is what will change if control is resized.
@@ -1734,7 +1735,7 @@ command ScrollRectIntoView pRect, pPadding
       lock messages
       set the thumbPosition of scrollbar "dvVScrollbar" of me to theVScroll
       set the lockMessages to msgsAreLocked
-      _SetVScroll theVScroll
+      _SetVScrollForPlatform theVScroll
     end if
   end if
 
@@ -2604,11 +2605,7 @@ setProp viewProp [pProp] pValue
       set the backgroundColor of graphic "dvBackground" of me to pValue
       break
     case "vscroll"
-      if the environment is "mobile" then
-        mobileControlSet sScrollerID, "vScroll", pValue
-      else
-        _SetVScroll pValue
-      end if
+      _SetVScrollForPlatform pValue
       break
     case "vscroll percent"
       _SetVScrollPercent pValue
@@ -3202,6 +3199,17 @@ on scrollerDidScroll pOffsetX, pOffsetY
 end scrollerDidScroll
 
 
+private command _SetVScrollForPlatform pValue
+  if sScrollerID is not empty then
+    mobileControlSet sScrollerID, "vScroll", pValue
+  else
+    _SetVScroll pValue
+  end if
+
+  return empty
+end _SetVScrollForPlatform
+
+
 private command _SetVScroll pValue
   local msgsAreLocked, refocusOnMe, theSelectedChunk, theOrigThumb
   local refocusOnFieldEditor = "false"
@@ -3298,7 +3306,7 @@ end _GetVScrollPercent
 private command _SetVScrollPercent pPercent
   local theWorkingEndValue
   put the endValue of scrollbar "dvVScrollbar" of me - the thumbSize of scrollbar "dvVScrollbar" of me into theWorkingEndValue
-  _SetVScroll round(theWorkingEndValue * pPercent)
+  _SetVScrollForPlatform round(theWorkingEndValue * pPercent)
 end _SetVScrollPercent
 
 
@@ -4582,7 +4590,7 @@ command UpdateScrollAnimation pScrollFrom, pScrollTo, pLastTime, pPhase, pPhaseS
   set the thumbPosition of scrollbar "dvVScrollbar" of me to theValue
   if not msgsAreLocked then unlock messages
 
-  _SetVScroll theValue
+  _SetVScrollForPlatform theValue
 
   ## Make sure focus stays with us
   if the long ID of me is in theControl and (there is not a theControl or the long ID of me is not in the long ID of the focusedobject) then
@@ -5106,7 +5114,7 @@ private command _ListGroupDragReorderAutoScroll pMouseH, pMouseV
       put theCurrentVScroll + theScroll into theScroll
 
       if theCurrentVScroll is not theScroll then
-        _SetVScroll theScroll
+        _SetVScrollForPlatform theScroll
       end if
     end if
   end if
