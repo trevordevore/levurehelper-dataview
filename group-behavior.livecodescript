@@ -234,7 +234,7 @@ command ResizeToFit
 
   set the topleft of group "dvListMask" of me to Item 1 to 2 of theMasterRect
   set the topleft of group "dvList" of me to Item 1 to 2 of theMasterRect
-  set the visible of scrollbar "dvVScrollbar" of me to sScrollerID is empty AND the viewProp["content height"] of me > _GetContentWindowHeight()
+  set the visible of scrollbar "dvVScrollbar" of me to the environment is not "mobile" AND the viewProp["content height"] of me > _GetContentWindowHeight()
   _ResizeListControls
 
   set the lockLoc of me to theLockLoc
@@ -3634,7 +3634,7 @@ private command _AutoHideScrollbars
   set the lockMessages to false
 
   ## Auto-hide
-  if the viewProp["autohide scrollbars"] of me AND sScrollerId is empty then
+  if the viewProp["autohide scrollbars"] of me AND the environment is not "mobile" then
     if the viewProp["content height"] of me <= _GetContentWindowHeight() then
       ## hide
       if the visible of scrollbar "dvVScrollbar" of me then
