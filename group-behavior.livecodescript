@@ -142,6 +142,8 @@ private command _CreateMobileScroller
       -- The 'canScrollToTop' determines whether touching the status bar scrolls
       -- the scroller to the top
       mobileControlSet sScrollerID, "canScrollToTop", "false"
+      -- Initialize to whatever the current vscroll of the view is
+      mobileControlSet sScrollerID, "vScroll", the viewProp["vscroll"] of me
     end if
   end if
 
