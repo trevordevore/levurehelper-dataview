@@ -103,7 +103,7 @@ command ResizeToFitContent
 
   lock screen
 
-  put the selectedChunk into theSelectedChunk
+  put _getSelectedChunk() into theSelectedChunk
 
   ## Resize the row which will resize the editor
   put the dvRow of the dvRowControl of me into theRow
@@ -122,3 +122,26 @@ command ResizeToFitContent
 
   unlock screen
 end ResizeToFitContent
+
+
+/**
+Summary: Returns a fully qualified reference to the selectedChunk.
+
+Description:
+The selectedChunk returns a short field reference (e.g. field 2). This is not
+sufficient for referencing the selectedChunk when the selectedField is not
+on the same stack as the defaultStack.
+
+Returns: Reference to selectedChunk
+*/
+function _getSelectedChunk
+  local tSelChunk, tSelField
+
+  put the selectedChunk into tSelChunk
+  if tSelChunk is not empty then
+    put the long id of the selectedField into tSelField
+    put tSelField into word -2 to -1 of tSelChunk
+  end if
+
+  return tSelChunk
+end _getSelectedChunk
