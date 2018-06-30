@@ -59,6 +59,16 @@ setProp uSelectedId pId
 end uSelectedId
 
 
+getProp uRowRecord[pRow]
+  return sDataA[pRow]
+end uRowRecord
+
+
+getProp uRowId[pRow]
+  return sDataA[pRow]["id"]
+end uRowId
+
+
 getProp uRowOfIdRecord[pId]
   local tRow
 
