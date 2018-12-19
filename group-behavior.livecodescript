@@ -5324,7 +5324,7 @@ end _ShouldFieldEditorClose
 
 
 /**
-* \brief Scrolls the row into view and dispatches the EditValue message to it.
+* \brief Scrolls the row into view and dispatches the EditKey message to it.
 *
 * It is up to the control to implement the EditKey handler. Normally it will call EditFieldText for
 * the field that edits the targeted key.
