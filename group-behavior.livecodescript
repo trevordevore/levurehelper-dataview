@@ -4433,13 +4433,6 @@ private function _GetControlOfStyle pStyle
       copy theTemplate to group "dvList" of me
       put _CustomControlReference(it) into theControl
 
-      # Uncomment the following code if a newGroup message is ever needed.
-      # e.g. some reason to initialize something when control is created.
-      # 2014-10-15: Templates get InitializeTemplate which handles initialzation. Don't worry about newGroup.
-      --         unlock messages
-      --         dispatch "newGroup" to theControl # This was slightly faster then leaving messages unlocked during "copy template"
-      --         lock messages
-
       ## Make sure a style is set
       set uTemplateStyle of theControl to pStyle
 
