@@ -7,9 +7,9 @@ setProp uData pDataArrayA
 end uData
 
 
-command DataForRow pRow, @pDataA, @pTemplateStyle
-  put sDataA[pRow] into pDataA
-  put "default" into pTemplateStyle
+command DataForRow pRow, @rDataA, @rTemplateStyle
+  put sDataA[pRow] into rDataA
+  put "default" into rTemplateStyle
 end DataForRow
 
 
