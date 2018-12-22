@@ -25,39 +25,48 @@ local sPendingMsgsA
 local sFieldEditor ## place holder until I decide what to do with editing.
 
 
-private function _GetTotalCachedHeight
-  local theTotal
+/**
+Summary: Returns the combined height of cached controls.
 
-  repeat for each key theKey in sViewPropsA["controls"]["control height cache"]
-    if sViewPropsA["controls"]["control height cache"][theKey] is NULL then add kDefaultForNonCachedVariableHeightRows to theTotal
-    else add sViewPropsA["controls"]["control height cache"][theKey] to theTotal
+Description:
+If a control has not been cachdd yet then kDefaultForNonCachedVariableHeightRows is used for the height.
+
+Returns: integer
+*/
+private function _GetTotalCachedHeight
+  local tTotal, tKey
+
+  repeat for each key tKey in sViewPropsA["controls"]["control height cache"]
+    if sViewPropsA["controls"]["control height cache"][tKey] is NULL then add kDefaultForNonCachedVariableHeightRows to tTotal
+    else add sViewPropsA["controls"]["control height cache"][tKey] to tTotal
   end repeat
-  return theTotal
+
+  return tTotal
 end _GetTotalCachedHeight
 
 
-command InspectInternally
-  local theTotal, theText
+/**
+Summary: Print out diagnostic information about the internal data structures.
 
-  repeat for each key theKey in sViewPropsA["controls"]["control height cache"]
-    if sViewPropsA["controls"]["control height cache"][theKey] is NULL then add kDefaultForNonCachedVariableHeightRows to theTotal
-    else add sViewPropsA["controls"]["control height cache"][theKey] to theTotal
-  end repeat
+Returns: Diagnostic text
+*/
+command __InspectInternally
+  local tText
 
-  put "control height cache:" && theTotal & cr & \
+  put "control height cache:" && _GetTotalCachedHeight() & cr & \
         "content height:" && the viewProp["content height"] of me & cr & \
-        "sViewProps:" & cr & printArray(sViewPropsA,,true) into theText
+        "sViewProps:" & cr & printArray(sViewPropsA,,true) into tText
 
-  --   breakpoint
-
-  return theText
-end InspectInternally
+  return tText
+end __InspectInternally
 
 
+/**
+Summary: Initializes internal data structures and creatres mobile scrollbar.
+*/
 before preopenControl
   _Init
 
-  ## mobile
   if the environment is "mobile" then
     set the visible of scrollbar "dvVScrollbar" of me to false
     _CreateMobileScroller
@@ -65,6 +74,9 @@ before preopenControl
 end preopenControl
 
 
+/**
+Summary: Cleans up the mobile scrollbar.
+*/
 after closeControl
   if the environment is "mobile" then
     if sScrollerID is among the lines of mobileControls() then
@@ -75,6 +87,11 @@ after closeControl
 end closeControl
 
 
+/**
+Summary: Initializes the DataView.
+
+Returns: nothing
+*/
 private command _Init
   if sInit then return empty
   put true into sInit
@@ -112,9 +129,16 @@ private command _Init
       dispatch "InitializeTemplate" to theTemplatesA[theKey]
     end if
   end repeat
+
+  return empty
 end _Init
 
 
+/**
+Summary: Creates a mobile scrollbar.
+
+Returns: empty
+*/
 private command _CreateMobileScroller
   if sScrollerID is empty OR sScrollerID is not among the lines of mobileControls() then
     -- Create the scroller and store its id
@@ -149,16 +173,34 @@ private command _CreateMobileScroller
 
   -- The 'contentRect' is the region the scroller scrolls over
   _SetMobileScrollerContentRect
+
+  return empty
 end _CreateMobileScroller
 
 
+/**
+Summary: Sets the content rect for the mobile scroller.
+
+Returns: empty
+*/
 private command _SetMobileScrollerContentRect
   if the environment is "mobile" and sScrollerID is not empty then
     mobileControlSet sScrollerID, "contentRect", (0, 0, the width of me, the viewProp["content height"] of me)
   end if
+
+  return empty
 end _SetMobileScrollerContentRect
 
 
+/**
+Summary: Sets the scrollbar width.
+
+Description:
+If user has set a specific width it is used. Otherwise a platform
+appropriate value is used.
+
+Returns: empty
+*/
 command _SetScrollbarWidth pWidth
   lock screen
   if pWidth is not an integer then
@@ -186,9 +228,15 @@ command _SetScrollbarWidth pWidth
 
   set the rect of scrollbar "dvVScrollbar" of me to theRectV
   unlock screen
+
+  return empty
 end _SetScrollbarWidth
 
 
+/**
+Summary: Resizes the DataView to fit the new rect.
+
+*/
 on resizeControl
   if the target is not me then pass resizeControl
   ResizeToFit
@@ -196,6 +244,11 @@ on resizeControl
 end resizeControl
 
 
+/**
+Summary: Resizes the DataView rows to fit the current rect.
+
+Returns: empty
+*/
 command ResizeToFit
   ## Throttle just in case developer tries to call this from different timers
   if sViewPropsA["running actions"]["resize to fit"] then
@@ -237,13 +290,13 @@ command ResizeToFit
   set the topleft of group "dvListMask" of me to Item 1 to 2 of theMasterRect
   set the topleft of group "dvList" of me to Item 1 to 2 of theMasterRect
   set the visible of scrollbar "dvVScrollbar" of me to the environment is not "mobile" AND the viewProp["content height"] of me > _GetContentWindowHeight()
-  _ResizeListControls
+  _ResizeSupportingControls
 
   set the lockLoc of me to theLockLoc
   unlock messages
 
   try
-    _TellControlsToResize
+    _ResizeRowControlsAsNeeded
 
     lock messages
     _ConfigureScrollbars
@@ -286,11 +339,11 @@ end ResizeToFit
 
 
 /**
-* \brief Resizes (or marks as needing resizing) all controls after the list area is resized.
-*
-* \return empty
+Summary: Resizes (or marks as needing resizing) all controls after the list area is resized.
+
+Returns: empty
 */
-private command _TellControlsToResize
+private command _ResizeRowControlsAsNeeded
   switch the viewProp["cache"] of me
     case "eager"
       _ResizeControls
@@ -298,41 +351,42 @@ private command _TellControlsToResize
       break
     case "lazy"
     default
-      local theIndex
+      local tIndex
 
       ## Mark them all as dirty
-      repeat for each key theIndex in sViewPropsA["controls"]["cache"]
-        put true into sViewPropsA["controls"]["cache"][theIndex]["resize"]
+      repeat for each key tIndex in sViewPropsA["controls"]["cache"]
+        put true into sViewPropsA["controls"]["cache"][tIndex]["resize"]
       end repeat
       break
   end switch
-end _TellControlsToResize
+
+  return empty
+end _ResizeRowControlsAsNeeded
 
 
 /**
-* \brief Resizes the list controls. Use this handler to resize necessary controls after showing/hiding scrollbars.
-*
-* \return empty
-*/
-private command _ResizeListControls
-  local theRect
+Summary: Resizes the list controls. Use this handler to resize necessary controls after showing/hiding scrollbars.
 
-  put _WorkingGroupRect(the long id of me) into theRect
+Returns: empty
+*/
+private command _ResizeSupportingControls
+  local tRect
+
+  put _WorkingGroupRect(the long id of me) into tRect
 
   if the visible of scrollbar "dvVScrollbar" of me then
-    put the left of scrollbar "dvVScrollbar" of me into item 3 of theRect
+    put the left of scrollbar "dvVScrollbar" of me into item 3 of tRect
   end if
 
-  set the rect of group "dvListMask" of me to theRect
-  set the rect of group "dvList" of me to theRect
-end _ResizeListControls
+  set the rect of group "dvListMask" of me to tRect
+  set the rect of group "dvList" of me to tRect
+
+  return empty
+end _ResizeSupportingControls
 
 
 /**
-* \brief Implements changing selection when arrow keys are pressed.
-*
-* \param pDirection See LiveCode docs.
-*
+Summary: Implements changing selection when arrow keys are pressed.
 */
 on arrowKey pDirection
   if word 1 of the target is "field" and not the locktext of the target then pass arrowkey
@@ -342,15 +396,17 @@ end arrowKey
 
 
 /**
-* \brief Defines the arrow key behavior for the control.
-*
-* \param pDirection The direction of the arrowkey that was pressed.
-*
-* This handler is called from the arrowkey message. If the developer needs to override
-* the arrowKey message in the behavior instance then they can call his handler explicitly
-* in order to get the default arrow key behavior.
-*
-* \return empty
+Summary: Defines the arrow key behavior for the control.
+
+Parameters:
+pDirection: The direction of the arrowkey that was pressed.
+
+Description:
+This handler is called from the arrowkey message. If you need to override
+the arrowKey message in the behavior instance then you can call his handler explicitly
+in order to get the default arrow key behavior.
+
+Returns: empty
 */
 command dvArrowKey pDirection
   ## Look for cases where we pass arrowkey
@@ -473,12 +529,17 @@ end dvArrowKey
 
 
 /**
-* \brief Looks for the next row in the view that can be selected.
-*
-* \param pStartingRow The row to start searching from. The first searched row will be +1 or -1 from this row.
-* \param pDirection "up" searches -1, "down" searchs + 1. This mimics arrows keys in the list.
-*
-* \return Row
+Summary: Looks for the next row in the view that can be selected.
+
+Parameters:
+pStartingRow: The row to start searching from. The first searched row will be +1 or -1 from this row.
+pDirection: "up" searches -1, "down" searchs + 1. This mimics arrows keys in the list.
+
+Description:
+This handler checks the `dvCanSelect` property of row controls until it finds
+one that is not `false`.
+
+Returns: Row
 */
 private function _NextSelectableRow pStartingRow, pDirection
   local i, theAnimSetting
@@ -519,620 +580,33 @@ end _NextSelectableRow
 
 
 /**
-* \brief Flags the control for a row as needing to be resized the next time it is drawn.
-*
-* \param pRow The row to flag.
-*
-* \return empty
+Summary: Flags the control for a row as needing to be resized the next time it is drawn.
+
+Parameters:
+pRow: The row to flag.
+
+Description:
+Flagging a row to be resized can be useful when working with cached controls
+and you want to mark rows as needed to be resized the next time they
+are scrolled into view.
+
+Returns: empty
 */
 command FlagRowForResize pRow
-  local theCacheKey
+  local tCacheKey
 
-  put _GetCacheKeyForRow(pRow) into theCacheKey
-  if sViewPropsA["controls"]["cache"][theCacheKey] is an array then
-    put true into sViewPropsA["controls"]["cache"][theCacheKey]["resize"]
+  put _GetCacheKeyForRow(pRow) into tCacheKey
+  if sViewPropsA["controls"]["cache"][tCacheKey] is an array then
+    put true into sViewPropsA["controls"]["cache"][tCacheKey]["resize"]
   end if
   return empty
 end FlagRowForResize
 
 
 /**
-* |brief Toggles the exanded state of a row.
-*
-* \param @pDataSetA The data set containing the tree.
-* \param pRow The row to toggle.
-* \param pLevelsDown How many levels to toggle. Empty or 0 only toggles pRow. -1 toggles all. Positive number affects that many levels down.
-* \param pExpandedState Pass in a true/false to force a setting.
-*
-* \package Tree
-*
-* \return The row number of the element.
-*/
-command TreeToggleRow @pDataSetA, pRow, pLevelsDown, pExpandedState
-  local theSelElementKeys, theElementKey
-  local theCurrentLevel, theChildNodes, theItemNo
-  local i
+Summary: Returns whether or not a row control is highlighted.
 
-  set the wholematches to true
-
-  # store selected elements
-  put sViewPropsA["hilited rows"] into theSelElementKeys
-  repeat with i = 1 to the number of items of theSelElementKeys
-    put item (item i of theSelElementKeys) of pDataSetA["visible object keys"] into item i of theSelElementKeys
-  end repeat
-
-  if pLevelsDown is empty then
-    put 0 into pLevelsDown
-  else if pLevelsDown < 0 then
-    put -1 into pLevelsDown
-  end if
-
-  # Make sure node is visible
-  put item pRow of pDataSetA["visible object keys"] into theElementKey
-  _ShowNode pDataSetA, theElementKey
-
-  --   # Are we showing or hiding?
-  --   local showOrHide
-
-  --   if pDataSetA["objects"][theElementKey]["expanded"] then put "hide" into showOrHide
-  --   else put "show" into showOrHide
-
-  # Toggle
-
-  _SetExpandedState pDataSetA, pRow, pExpandedState
-
-  # Affect children
-  if pLevelsDown is not 0 then
-    put 0 into theCurrentLevel
-    _SetNodeAncestorExpandedState pDataSetA, theElementKey, pDataSetA["objects"][theElementKey]["expanded"], pLevelsDown, theCurrentLevel
-  end if
-
-  --   if showOrHide is "hide" then
-  --      AnimateRows theChildNodes, showOrHide
-  --   else
-  --      AnimateRows theChildNodes, showOrHide
-  --   end if
-  lock screen
-
-  --   put the milliseconds into theStart
-
-  RenderView
-
-  --   put "time:" && the milliseconds - theStart
-
-  put TreeDescendantNodesOfRow(pDataSetA, pRow, true) into theChildNodes
-  if theChildNodes is not empty then
-    local theLastRow
-
-    put itemOffset(the last item of theChildNodes, pDataSetA["visible object keys"]) into theLastRow
-    ScrollRowIntoView theLastRow, "bottom"
-  end if
-
-  # Now make sure pRow is visible
-  ScrollRowIntoView pRow, "top" # scroll to top if not in view
-
-  # update selected rows
-  # rows may no longer be available because they are contracted
-  if theSelElementKeys is not empty then
-    repeat with i = the number of items of theSelElementKeys down to 1
-      put itemOffset(item i of theSelElementKeys, pDataSetA["visible object keys"]) into theItemNo
-      if theItemNo > 0 then
-        put theItemNo into item i of theSelElementKeys
-      else
-        delete item i of theSelElementKeys
-      end if
-    end repeat
-
-    # If there are no rows left to be selected then select row that was toggled
-    if theSelElementKeys is empty then put pRow into theSelElementKeys
-    put theSelElementKeys into sViewPropsA["hilited rows"]
-    _SetHilitedRows theSelElementKeys
-  end if
-
-  unlock screen
-
-  return itemOffset(theElementKey, pDataSetA["visible object keys"])
-end TreeToggleRow
-
-
-/**
-* \brief Attempts to render tree and keep some sensical scroll state.
-*
-*/
-private command _RenderAfterAlteringVisibleTreeNodes @pDataSetA, pRow
-  local theVScroll, theChildNodes
-
-  --   put the viewProp["vscroll"] of me into theVScroll
-  RenderView
-  --   set the viewProp["vscroll"] of me to theVScroll
-  # If children are off bottom then scroll to bottom
-  put TreeDescendantNodesOfRow(pDataSetA, pRow, true) into theChildNodes
-  if theChildNodes is not empty then
-    local theLastRow
-
-    put itemOffset(the last item of theChildNodes, pDataSetA["visible object keys"]) into theLastRow
-    ScrollRowIntoView theLastRow, "bottom"
-  end if
-
-  return empty
-end _RenderAfterAlteringVisibleTreeNodes
-
-
-/**
-* \brief Sets the expanded state for a node.
-*
-* \param @pDataSetA The data set containing the tree.
-* \param pRow The row to expand/contract.
-* \param pBoolean The value to assign to the expanded state. Leave empty to toggle.
-*
-* \return empty
-*/
-private command _SetExpandedState @pDataSetA, pRow, pBoolean
-  local theChildElementKeys, theChildElementKey, theElementKey, theItemCount
-
-  put item pRow of pDataSetA["visible object keys"] into theElementKey
-
-  if pBoolean is empty then put not pDataSetA["objects"][theElementKey]["expanded"] into pBoolean
-  else put pBoolean is true into pBoolean
-
-  # Make sure it has a boolean value
-  if pDataSetA["objects"][theElementKey]["expanded"] is empty then put false into pDataSetA["objects"][theElementKey]["expanded"]
-
-  if pDataSetA["objects"][theElementKey]["expanded"] is not pBoolean then
-    if not pDataSetA["objects"][theElementKey]["is leaf"] then
-      if pDataSetA["objects"][theElementKey]["children"] is not empty then
-        if not pBoolean then
-          put _NumberOfVisibleAncestors(pDataSetA, "objects", theElementKey) into theItemCount
-          delete item (pRow + 1) to (pRow + theItemCount) of pDataSetA["visible object keys"]
-          put false into pDataSetA["objects"][theElementKey]["expanded"]
-          --            put "hide" into theAction
-        else
-          put true into pDataSetA["objects"][theElementKey]["expanded"]
-          put _DescendantElements(pDataSetA, "objects", theElementKey, true) into theChildElementKeys
-
-          # make sure we don't add children to visible object keys twice
-          set the wholematches to true
-          local theRow
-          put pRow into theRow
-          repeat for each item theChildElementKey in theChildElementKeys
-            if theChildElementKey is not among the items of pDataSetA["visible object keys"] then
-              put "," & theChildElementKey after item theRow of pDataSetA["visible object keys"]
-              add 1 to theRow
-            end if
-          end repeat
-          --            put "show" into theAction
-        end if
-      end if
-    end if
-  end if
-
-  return empty
-end _SetExpandedState
-
-
-/**
-* |brief Expands any tree nodes necessary so that the node can be seen. The selected row(s) will be maintained.
-*
-* \param @pDataSetA The data set containing the tree.
-* \param pElementKey The key in the data set that should be shown.
-*
-* \package Tree
-*
-* \return The row number of the element.
-*/
-command TreeShowNode @pDataSetA, pElementKey
-  local theSelElementKeys, theRow, i
-
-  # store selected elements
-  put sViewPropsA["hilited rows"] into theSelElementKeys
-  put item 1 of theSelElementKeys into theRow
-  repeat with i = 1 to the number of items of theSelElementKeys
-    put item (item i of theSelElementKeys) of pDataSetA["visible object keys"] into item i of theSelElementKeys
-  end repeat
-
-  _ShowNode pDataSetA, pElementKey
-
-  lock screen
-  RenderView
-
-  # update selected rows
-  # rows may no longer be available because they are contracted
-  if theSelElementKeys is not empty then
-    local theItemNo
-
-    set the wholematches to true
-    repeat with i = the number of items of theSelElementKeys down to 1
-      put itemOffset(item i of theSelElementKeys, pDataSetA["visible object keys"]) into theItemNo
-      if theItemNo > 0 then
-        put theItemNo into item i of theSelElementKeys
-      else
-        delete item i of theSelElementKeys
-      end if
-    end repeat
-
-    # If there are no rows left to be selected then select row that was toggled
-    if theSelElementKeys is empty then put itemOffset(pElementKey, pDataSetA["visible object keys"]) into theSelElementKeys
-    put theSelElementKeys into sViewPropsA["hilited rows"]
-    _SetHilitedRows theSelElementKeys
-  end if
-
-  # Now make sure shown row is visible
-  ScrollRowIntoView itemOffset(pElementKey, pDataSetA["visible object keys"])
-
-  unlock screen
-
-  set the wholematches to true
-  return itemOffset(pElementKey, pDataSetA["visible object keys"])
-end TreeShowNode
-
-
-/**
-* |brief Expands any tree nodes necessary so that the node can be seen.
-*
-* \param @pDataSetA The data set containing the tree.
-* \param pElementKey The key in the data set that should be shown.
-*
-* \package Tree
-*
-* \return empty
-*/
-private command _ShowNode @pDataSetA, pElementKey
-  local theParentKey, theKeys
-
-  # Build list from root parent down to pElementKey and then work through it.
-  # We need this in order to expand a row.
-  put pDataSetA["objects"][pElementKey]["parent"] into theParentKey
-
-  repeat until theParentKey is empty
-    put theParentKey & "," after theKeys
-    put pDataSetA["objects"][theParentKey]["parent"] into theParentKey
-  end repeat
-  delete the last char of theKeys
-
-  local theKey, theRowNo
-  set the wholematches to true
-
-  repeat with i = the number of items of theKeys down to 1
-    put item i of theKeys into theKey
-    if not pDataSetA["objects"][theKey]["expanded"] then
-      put itemOffset(theKey, pDataSetA["visible object keys"]) into theRowNo
-      if theRowNo > 0 then
-        _SetExpandedState pDataSetA, theRowNo, true
-      end if
-    end if
-  end repeat
-
-  return empty
-end _ShowNode
-
-
-/**
-* \brief Returns the node keys of the ancestors of a row.
-*
-* \param @pDataSetA The data set containing the tree.
-* \param pRow The row to get ancestor nodes for.
-*
-* \package Tree
-*
-* \return List
-*/
-function TreeAncestorNodesOfRow @pDataSetA, pRow
-  local theElementKey
-  put item pRow of pDataSetA["visible object keys"] into theElementKey
-  return _AncestorElements(pDataSetA, "objects", theElementKey)
-end TreeAncestorNodesOfRow
-
-
-/**
-* \brief Returns the node keys of the ancestors of a node.
-*
-* \param @pDataSetA The data set containing the tree.
-* \param pNodeKey The node key to get ancestor nodes for.
-*
-* \package Tree
-*
-* \return List
-*/
-function TreeAncestorNodesOfNode @pDataSetA, pNodeKey
-  return _AncestorElements(pDataSetA, "objects", pNodeKey)
-end TreeAncestorNodesOfNode
-
-
-/**
-* \brief Returns the node keys of the descendants of a row.
-*
-* \param @pDataSetA The data set containing the tree.
-* \param pRow The row to get ancestor nodes for.
-* \param pOnlyVisible Pass in true to only return the visible descendant elements of pElementKey. Default is false.
-*
-* \package Tree
-*
-* \return List
-*/
-function TreeDescendantNodesOfRow @pDataSetA, pRow, pOnlyVisible
-  local theElementKey
-  put item pRow of pDataSetA["visible object keys"] into theElementKey
-  return _DescendantElements(pDataSetA, "objects", theElementKey, pOnlyVisible)
-end TreeDescendantNodesOfRow
-
-
-/**
-* \brief Returns the node keys of the descendants of a node.
-*
-* \param @pDataSetA The data set containing the tree.
-* \param pNodeKey The node key to get ancestor nodes for.
-* \param pOnlyVisible Pass in true to only return the visible descendant elements of pElementKey. Default is false.
-*
-* \package Tree
-*
-* \return List
-*/
-function TreeDescendantNodesOfNode @pDataSetA, pNodeKey, pOnlyVisible
-  return _DescendantElements(pDataSetA, "objects", pNodeKey, pOnlyVisible)
-end TreeDescendantNodesOfNode
-
-
-/**
-* \brief Recursive helper command for expanding nodes.
-*
-* \param @pDataSetA The data set containing the tree.
-* \param pElementKey The key in the data set that should be expanded.
-* \param pExpandedState True or false.
-* \param pLevelsDown The number of levels down to expand. Leave empty to expand all children.
-* \param @pCurrentLevel The current level that is being expanded. When this matches pLevelsDown or the last child is expanded then recursion stops.
-*
-* \return empty
-*/
-command _SetNodeAncestorExpandedState @pDataSetA, pElementKey, pExpandedState, pLevelsDown, @pCurrentLevel
-  local theCurrentLevel, theChildrenKeys, theKey, theRowNo
-
-  put pExpandedState is true into pExpandedState
-
-  add 1 to theCurrentLevel
-  put pCurrentLevel into theCurrentLevel
-
-  put pDataSetA["objects"][pElementKey]["children"] into theChildrenKeys
-
-  set the wholematches to true
-
-  repeat for each item theKey in theChildrenKeys
-    if pDataSetA["objects"][theKey]["expanded"] is not pExpandedState then
-      put itemOffset(theKey, pDataSetA["visible object keys"]) into theRowNo
-      if theRowNo > 0 then
-        # Make call which deals with visible toggling
-        _SetExpandedState pDataSetA, theRowNo, pExpandedState
-      else
-        put pExpandedState into pDataSetA["objects"][theKey]["expanded"]
-      end if
-    end if
-
-    if theCurrentLevel is not pLevelsDown then
-      _SetNodeAncestorExpandedState pDataSetA, theKey, pExpandedState, pLevelsDown, pCurrentLevel
-      put theCurrentLevel into pCurrentLevel # reset for next child in loop.
-    end if
-  end repeat
-
-  return empty
-end _SetNodeAncestorExpandedState
-
-
-/**
-* |brief Returns a list of nodes that are descendants of a node.
-*
-* \param @pTreeA The tree structure.
-* \param pNodesKey The name of the nodes key.
-* \param pParentNodeId The parent node id.
-* \param pOnlyVisible Only get the visible ancestor ids.
-*
-* \package Tree
-*
-* \return List
-*/
-private function _DescendantElements @pTreeA, pNodesKey, pParentNodeId, pOnlyVisible
-  local theIds, theChildId, theChildIds
-
-  put pOnlyVisible is true into pOnlyVisible
-
-  if not pOnlyVisible OR (pOnlyVisible AND pTreeA[pNodesKey][pParentNodeId]["expanded"]) then
-    repeat for each item theChildId in pTreeA[pNodesKey][pParentNodeId]["children"]
-      put theChildId into item (the number of items of theIds + 1) of theIds
-
-      put _DescendantElements(pTreeA, pNodesKey, theChildId, pOnlyVisible) into theChildIds
-      if theChildIds is not empty then
-        put theChildIds into item (the number of items of theIds + 1) of theIds
-      end if
-    end repeat
-  end if
-
-  return theIds
-end _DescendantElements
-
-
-/**
-* |brief Returns a list of nodes that are ancestors of a node.
-*
-* \param @pTreeA The tree structure.
-* \param pNodesKey The name of the nodes key.
-* \param pChildNodeId The child node id to get the ancestors for.
-*
-* \package Tree
-*
-* \return List
-*/
-private function _AncestorElements @pTreeA, pNodesKey, pChildNodeId
-  local theIds, theAncestorIds
-
-  if pTreeA[pNodesKey][pChildNodeId]["parent"] is not empty then
-    put pTreeA[pNodesKey][pChildNodeId]["parent"] into theIds
-    put _AncestorElements(pTreeA, pNodesKey, pTreeA[pNodesKey][pChildNodeId]["parent"]) into theAncestorIds
-    if theAncestorIds is not empty then
-      put "," & theAncestorIds after theIds
-    end if
-  end if
-
-  return theIds
-end _AncestorElements
-
-
-/**
-* |brief Returns the number of visible ancestor nodes of a node.
-*
-* \param @pTreeA The tree structure.
-* \param pNodesKey The name of the nodes key.
-* \param pParentNodeId The parent node id.
-*
-* \package Tree
-*
-* \return Integer
-*/
-private function _NumberOfVisibleAncestors @pTreeA, pNodesKey, pParentNodeId
-  local theItemCount, theChildId
-
-  if pTreeA[pNodesKey][pParentNodeId]["expanded"] then
-    put the number of items of pTreeA[pNodesKey][pParentNodeId]["children"] into theItemCount
-
-    repeat for each item theChildId in pTreeA[pNodesKey][pParentNodeId]["children"]
-      add _NumberOfVisibleAncestors(pTreeA, pNodesKey, theChildId) to theItemCount
-    end repeat
-  end if
-
-  return max(theItemCount, 0)
-end _NumberOfVisibleAncestors
-
-
-/**
-* \brief Locates an element in the tree (representation of a row). The element may or may not be a visible row.
-*
-* \param @pDataSetA The data set to search.
-* \param pKey The name of the key to use to locate the row.
-* \param pValue The value to find.
-*
-* You can pass in multiple key/value pairs as parameters in order to match multiple keys.
-*
-* \package Tree
-*
-* \return Array with "key", "row" and "visible" keys. ""key" is the key of the element found under the object key in the view data set. "key" will be empty if not found.
-*/
-function TreeFindElement @pDataSetA, pKey, pValue
-  local i, foundAMatch, theElementKey, theFilterA
-  local theObjectsKey, theRowsKey
-
-  ## Create a lookup array
-  if pKey is not an array then
-    repeat with i = 2 to the paramCount
-      put param(i+1) into theFilterA[param(i)]
-      add 1 to i
-    end repeat
-  else
-    put pKey into theFilterA
-  end if
-
-  put "objects" into theObjectsKey
-  put "visible object keys" into theRowsKey
-
-  # Find match
-  repeat with i = 1 to the number of elements of pDataSetA[theObjectsKey]
-    put true into foundAMatch
-
-    repeat for each key theKey in theFilterA
-      if pDataSetA[theObjectsKey][i][theKey] is not theFilterA[theKey] then
-        put false into foundAMatch
-        next repeat
-      end if
-    end repeat
-
-    if foundAMatch then
-      put i into theElementKey
-      exit repeat
-    end if
-  end repeat
-
-  # Fill in return value
-  local theA
-  put theElementKey into theA["key"]
-  put true into theA["visible"]
-  put empty into theA["row"]
-
-  if theElementKey is not empty then
-    set the wholematches to true
-    put itemoffset(theElementKey, pDataSetA[theRowsKey]) into theA["row"]
-    put theA["row"] > 0 into theA["visible"]
-  end if
-
-  return theA
-end TreeFindElement
-
-
-/**
-* \brief Returns the order of a row in relation to its immediate siblings.
-*
-* \param @pDataSetA A reference to the view data set.
-* \param pRow The row to focus on. Must be visible.
-*
-* \package Tree
-*
-* \return Position. Empty if no parent.
-*/
-function TreeRowPositionRelativeToParent @pDataSetA, pRow
-  local theId, theParentId, thePosition
-  local theObjectsKey, theRowsKey
-
-  put "objects" into theObjectsKey
-  put "visible object keys" into theRowsKey
-
-  set the wholeMatches to true
-
-  # Find position relative to parent.
-  put item pRow of pDataSetA[theRowsKey] into theId
-  put pDataSetA[theObjectsKey][theId]["parent"] into theParentId
-
-  if theParentId > 0 then
-    return itemOffset(theId, pDataSetA[theObjectsKey][theParentId]["children"])
-  else
-    local theRow
-
-    ## At root level
-    repeat for each item theId in pDataSetA[theRowsKey]
-      add 1 to theRow
-      if pDataSetA[theObjectsKey][theId]["parent"] < 1 then
-        add 1 to thePosition
-      end if
-      if theRow is pRow then
-        return thePosition
-      end if
-    end repeat
-  end if
-
-  return empty
-end TreeRowPositionRelativeToParent
-
-
-/**
-* \brief Returns the tree level of a row.
-*
-* \param @pDataSetA A reference to the view data set.
-* \param pElementKey The key of the element to determine the level of.
-*
-* \package Tree
-*
-* \return Integer
-*/
-function TreeLevelOfElement @pDataSetA, pElementKey
-  local theLevel = "1"
-
-  repeat until pDataSetA["objects"][pElementKey]["parent"] < 1
-    add 1 to theLevel
-    put pDataSetA["objects"][pElementKey]["parent"] into pElementKey
-  end repeat
-
-  return theLevel
-end TreeLevelOfElement
-
-
-/**
-* \brief Returns whether or not a row control is highlighted.
-*
-* \return boolean
+Returns: boolean
 */
 getProp dvHilite
   local theControl
@@ -1142,9 +616,9 @@ end dvHilite
 
 
 /**
-* \brief Alias to dvHilitedRows.
-*
-* \return List of hilited rows.
+Summary: Alias to dvHilitedRows.
+
+Returns: List of hilited rows.
 */
 getprop dvHilitedRow
   return sViewPropsA["hilited rows"]
@@ -1152,9 +626,9 @@ end dvHilitedRow
 
 
 /**
-* \brief Returns a list of rows that are hilited in the control.
-*
-* \return List of hilited rows.
+Summary: Returns a list of rows that are hilited in the control.
+
+Returns: List of hilited rows.
 */
 getprop dvHilitedRows
   return sViewPropsA["hilited rows"]
@@ -1162,12 +636,13 @@ end dvHilitedRows
 
 
 /**
-* \brief Alias to dvHilitedRows.
-*
-* \param pRow Row to hilite.
-* \param pForceScroll Will scroll the rows into view, regardless of whether or not the highlighted rows changed (unless the "scroll selections into view" property is false).
-*
-* \return Error message
+Summary: Alias to dvHilitedRows.
+
+Parameters:
+pRow Row to hilite.
+pForceScroll: Will scroll the rows into view, regardless of whether or not the highlighted rows changed (unless the "scroll selections into view" property is false).
+
+Returns: Error message
 */
 setprop dvHilitedRow[pForceScroll] pRows
   local theRowsChanged
@@ -1188,12 +663,13 @@ end dvHilitedRow
 
 
 /**
-* \brief Sets the list of rows that are hilited in the control.
-*
-* \param pRows List of rows to hilite.
-* \param pForceScroll Will scroll the rows into view, regardless of whether or not the highlighted rows changed (unless the "scroll selections into view" property is false).
-*
-* \return Error message
+Summary: Sets the list of rows that are hilited in the control.
+
+Parameters:
+pRows List of rows to hilite.
+pForceScroll: Will scroll the rows into view, regardless of whether or not the highlighted rows changed (unless the "scroll selections into view" property is false).
+
+Returns: Error message
 */
 setprop dvHilitedRows[pForceScroll] pRows
   set the dvHilitedRow[pForceScroll] of me to pRows
@@ -1205,8 +681,8 @@ end dvHilitedRows
 * Returns the controls associated with a row.
 *
 * This may return empty if the row is not visible and caching is not turned on.
-*
-* \return Control reference
+
+Returns: Control reference
 */
 getProp dvControlOfRow [pRow]
   return sViewPropsA["controls"]["cache"][_GetCacheKeyForRow(pRow)]["control"]
@@ -1214,7 +690,7 @@ end dvControlOfRow
 
 
 /**
-* \brief Returns whether or not a row has been rendered. It it hasn't been rendered then it is a ghost control.
+Summary: Returns whether or not a row has been rendered. It it hasn't been rendered then it is a ghost control.
 *
 * This property is useful when caching is set to "lazy".
 */
@@ -1228,9 +704,9 @@ end dvControlHasBeenRendered
 
 
 /**
-* \brief Returns all controls in the data view cache.
-*
-* \return CR delimited list of controls
+Summary: Returns all controls in the data view cache.
+
+Returns: CR delimited list of controls
 */
 getProp dvRowControls
   local theControls
@@ -1245,9 +721,10 @@ end dvRowControls
 
 
 /**
-* \brief Dispatchs the selectedRowChanged message to the behavior instance.
-*
-* \param pPreviouslyHilitedRows The list of rows that were hilited prior to the selection changing.
+Summary: Dispatchs the selectedRowChanged message to the behavior instance.
+
+Parameters:
+pPreviouslyHilitedRows The list of rows that were hilited prior to the selection changing.
 *
 * return empty
 */
@@ -1258,11 +735,12 @@ end _SelectionChanged
 
 
 /**
-* \brief Selects a control, stores it as the first one clicked on and brings focus into view.
-*
-* \param pControl Reference to control clicked on. It empty then default is dvRowControl.
-*
-* \return empty
+Summary: Selects a control, stores it as the first one clicked on and brings focus into view.
+
+Parameters:
+pControl Reference to control clicked on. It empty then default is dvRowControl.
+
+Returns: empty
 */
 private command _SelectControl pControl
   -----
@@ -1291,11 +769,12 @@ end _SelectControl
 
 
 /**
-* \brief Sets the list of hilited rows for the control, hilites the controls and scrolls the first one into view.
-*
-* \param pRows List of rows to hilite.
-*
-* \return Boolean value indicating whether or not hilited row changed.
+Summary: Sets the list of hilited rows for the control, hilites the controls and scrolls the first one into view.
+
+Parameters:
+pRows List of rows to hilite.
+
+Returns: Boolean value indicating whether or not hilited row changed.
 */
 private command _SetHilitedRows pRows
   local theRows, theTotalRows, theRow
@@ -1339,9 +818,9 @@ end _SetHilitedRows
 
 
 /**
-* \brief Tells you whether or not the last mouse click was within the content area of the control.
-*
-* \return Boolean
+Summary: Tells you whether or not the last mouse click was within the content area of the control.
+
+Returns: Boolean
 */
 getprop dvClickedWithinContentArea
   local theClickLoc
@@ -1357,9 +836,9 @@ end dvClickedWithinContentArea
 
 
 /**
-* \brief Returns the last row clicked on (or targeted in the case of arrowkeys or select all).
-*
-* \return Integer
+Summary: Returns the last row clicked on (or targeted in the case of arrowkeys or select all).
+
+Returns: Integer
 */
 getprop dvClickRow
   return sLastTargetedRow
@@ -1367,9 +846,9 @@ end dvClickRow
 
 
 /**
-* \brief Selects all rows in the view.
-*
-* \return empty
+Summary: Selects all rows in the view.
+
+Returns: empty
 */
 command SelectAll
   if the selectedField is not empty and (not the listBehavior of the selectedField or (listBehavior of the selectedField and multiplehilites of the selectedfield)) then
@@ -1407,11 +886,12 @@ end SelectAll
 
 
 /**
-* \brief Returns the rect of a row in the view. The rect is relative ot the card.
-*
-* \param pRow The row to get the rect for.
-*
-* \return Rect
+Summary: Returns the rect of a row in the view. The rect is relative ot the card.
+
+Parameters:
+pRow The row to get the rect for.
+
+Returns: Rect
 */
 getProp dvRectOfRow[pRow]
   local theRect, theVScroll
@@ -1435,10 +915,11 @@ end dvRectOfRow
 
 /**
 * |brief Returns the rect of a row in relative space
-*
-* \param pRow The row to get the rect for.
-*
-* \return Rect
+
+Parameters:
+pRow The row to get the rect for.
+
+Returns: Rect
 */
 private function _RelativeRectOfRow pRow
   local theRect
@@ -1508,10 +989,11 @@ end _RelativeRectOfRow
 
 
 /**
-* \brief Scrolls the row to the top or bottom of the view.
-*
-* \param pRow The row to scroll.
-* \param pPlacement Top or bottom.
+Summary: Scrolls the row to the top or bottom of the view.
+
+Parameters:
+pRow The row to scroll.
+pPlacement: Top or bottom.
 *
 */
 command ScrollRowTo pRow, pPlacement
@@ -1521,12 +1003,13 @@ end ScrollRowTo
 
 
 /**
-* \brief Scrolls the specified row into view.
-*
-* \param pRow Row to scroll into view.
-* \param pPlacement Optional parameter specifying whether row should be displayed at top or bottom of view. "top" or "bottom".
-*
-* \return Error message
+Summary: Scrolls the specified row into view.
+
+Parameters:
+pRow Row to scroll into view.
+pPlacement: Optional parameter specifying whether row should be displayed at top or bottom of view. "top" or "bottom".
+
+Returns: Error message
 */
 command ScrollRowIntoView pRow, pPlacement
   _ScrollRow pRow, pPlacement, false
@@ -1535,13 +1018,14 @@ end ScrollRowIntoView
 
 
 /**
-* \brief Scrolls a row into view.
-*
-* \param pRow The row to scroll.
+Summary: Scrolls a row into view.
+
+Parameters:
+pRow The row to scroll.
 * \param [pPlacement] empty, "top" or "bottom".
 * \param [pForceScroll] Pass in true along with pPlacement to force a row to top or bottom.
-*
-* \return Error
+
+Returns: Error
 */
 private command _ScrollRow pRow, pPlacement, pForceScroll
   local theError, theMaskHeight, theOffset, theMaskRect, controlIsTallerThanMask
@@ -1656,12 +1140,13 @@ end _ScrollRow
 
 
 /**
-* \brief Scrolls the specified rectangle into view. You can provide a padding for the top/bottom so that rect has spacing between top/bottom of view.
-*
-* \param pRect The rectangle to scroll into view.
-* \param pPadding A rectangle specifying the padding to use. Only item 2 and 4 are used at this time.
-*
-* \return empty
+Summary: Scrolls the specified rectangle into view. You can provide a padding for the top/bottom so that rect has spacing between top/bottom of view.
+
+Parameters:
+pRect The rectangle to scroll into view.
+pPadding: A rectangle specifying the padding to use. Only item 2 and 4 are used at this time.
+
+Returns: empty
 */
 command ScrollRectIntoView pRect, pPadding
   local theItemNo
@@ -1747,8 +1232,8 @@ end ScrollRectIntoView
 
 /**
 * |brief Scrolls the text selection into view.
-*
-* \return empty
+
+Returns: empty
 */
 command ScrollSelectionIntoView
   if not sViewPropsA["is animating"] then
@@ -1825,9 +1310,9 @@ end _TopAndBottomAreClipped
 
 
 /**
-* \brief Loops through the visible controls ("rows in use") and turns highlighting on/off as appropriate.
-*
-* \return empty
+Summary: Loops through the visible controls ("rows in use") and turns highlighting on/off as appropriate.
+
+Returns: empty
 */
 private command _HiliteRowsInVisibleControls
   local msgsAreLocked, theBoolean
@@ -1848,12 +1333,13 @@ end _HiliteRowsInVisibleControls
 
 
 /**
-* \brief Turns the hilite for a control on/off.
-*
-* \param pControl Control reference.
-* \param pBoolean Whether or not to turn hilite on.
-*
-* \return empty
+Summary: Turns the hilite for a control on/off.
+
+Parameters:
+pControl Control reference.
+pBoolean: Whether or not to turn hilite on.
+
+Returns: empty
 */
 private command _HiliteControl pControl, pBoolean
   local theRow, theColor
@@ -2050,11 +1536,11 @@ end _IsThisModifierSetActive
 
 
 /**
-* \brief Implements scroll wheel scrolling for the control.
+Summary: Implements scroll wheel scrolling for the control.
 *
 * pKeyNum See LiveCode docs.
-*
-* \return empty
+
+Returns: empty
 */
 on rawKeyDown pKeyNum
   ## exit immediately if an editable field is the target and action isn't scroll wheel.
@@ -2251,7 +1737,7 @@ end touchEnd
 
 
 /**
-* \brief Sent in cases where user touches row, holds but then starts scrolling.
+Summary: Sent in cases where user touches row, holds but then starts scrolling.
 *
 */
 on touchRelease
@@ -2289,7 +1775,7 @@ local sMouseDownA # before handler stores data in this variable that after handl
 
 
 /**
-* \brief Developers who override mousedown can use this call.
+Summary: Developers who override mousedown can use this call.
 *
 */
 command dvMouseDown pMouseBtnNum
@@ -2299,7 +1785,7 @@ end dvMouseDown
 
 
 /**
-* \brief Selects rows in the view prior to the developer mouseDown being processed.
+Summary: Selects rows in the view prior to the developer mouseDown being processed.
 *
 */
 command dvMouseDownBefore pMouseBtnNum
@@ -2443,7 +1929,7 @@ end dvMouseDownBefore
 
 
 /**
-* \brief Sends the selection changed message or updates hilited rows after developer mouseDown is processed.
+Summary: Sends the selection changed message or updates hilited rows after developer mouseDown is processed.
 *
 */
 command dvMouseDownAfter pMouseBtnNum
@@ -2656,12 +2142,12 @@ end _GetContentWindowHeight
 
 
 /**
-* \brief Renders the data in the view using the current vscroll. The 'hilited rows' property will be reset.
+Summary: Renders the data in the view using the current vscroll. The 'hilited rows' property will be reset.
 *
 * All controls will be updated with latest data. If caching is on this means all controls get new data.
 * Any controls which have not yet been cached will be cached during this call. No controls will be recreated.
-*
-* \return empty
+
+Returns: empty
 */
 command RenderView
   put empty into sViewPropsA["hilited rows"]
@@ -2672,14 +2158,15 @@ end RenderView
 
 
 /**
-* \brief Internal helper which renders the data in the view using the current vscroll.
-*
-* \param pRefreshDataInCachedControls If false and caching is on then cached controls will not have data updated. Only non-existent controls will be added to the cache. This can speed things up when refreshing due to row order changing.
+Summary: Internal helper which renders the data in the view using the current vscroll.
+
+Parameters:
+pRefreshDataInCachedControls If false and caching is on then cached controls will not have data updated. Only non-existent controls will be added to the cache. This can speed things up when refreshing due to row order changing.
 *
 * All controls will be updated with latest data. If caching is on this means all controls get new data.
 * Any controls which have not yet been cached will be cached during this call. No controls will be recreated.
-*
-* \return empty
+
+Returns: empty
 */
 private command _RenderView pRefreshDataInCachedControls
   local msgsAreLocked, theFocusedObject, theSelChunk
@@ -2716,14 +2203,14 @@ private command _RenderView pRefreshDataInCachedControls
 
   ## Cache controls based on settings
   if the viewProp["cache"] of me is among the items of "eager,lazy" then
-    _UpdateControlCache 0, 0 # This cleans up the current rows in use
+    _UpdateControlCacheForActiveRange 0, 0 # This cleans up the current rows in use
     _RefreshRowCacheKeys # This remaps data cache keys to the appropriate row.
     _CacheControls pRefreshDataInCachedControls # This caches the controls, creating as needed, and associating them with a row.
   else if not the viewProp["fixed row height"] of me then
-    _UpdateControlCache 0, 0
+    _UpdateControlCacheForActiveRange 0, 0
     _InitializeHeightsForVariableSizedRows
   else
-    _UpdateControlCache 0, 0
+    _UpdateControlCacheForActiveRange 0, 0
   end if
 
   ## Start from scratch
@@ -2794,7 +2281,7 @@ end RunRenderViewAgain
 
 
 /**
-* \brief Fills in starting values for heights for all rows when row heights are not fixed and caching is not on.
+Summary: Fills in starting values for heights for all rows when row heights are not fixed and caching is not on.
 *
 * Currently each row is seeded with a NULL value. This helps us determine which ones have
 * been sized and which ones haven't.
@@ -2824,7 +2311,7 @@ end _InitializeHeightsForVariableSizedRows
 
 
 /**
-* \brief Refresh the view by making sure the proper data is mapped to the proper row.
+Summary: Refresh the view by making sure the proper data is mapped to the proper row.
 *
 * The purpose of this handler is to ensure that the proper data is mapped to the proper row
 * in the view. It can be called after reordering rows, deleting rows, adding rows, etc.
@@ -2832,8 +2319,8 @@ end _InitializeHeightsForVariableSizedRows
 * If caching is on then the cache keys for each row will be updated, clearing controls as necessary, and any new controls will be initialized/displayed.
 *
 * If caching is off then the normal draw routines are called.
-*
-* \return empty
+
+Returns: empty
 */
 command RefreshViewRows
   _RenderView false
@@ -2842,13 +2329,15 @@ end RefreshViewRows
 
 
 /**
-* \brief Refreshes the data in the specified rows.
-*
-* \param pRows
-*
-* If a row does not have a control associated with it then nothing will happen.
-*
-* \return empty
+Summary: Refreshes the data in the specified rows and renders them.
+
+Parameters:
+pRows: A comma-delimited list of rows to render.
+
+Description:
+If a row does not have a control associated with it then nothing will happen.
+
+Returns: empty
 */
 command RenderRows pRows
   local theRow, theIndex
@@ -2923,7 +2412,7 @@ command RenderRows pRows
     unlock messages
     RenderVisibleRows
 
-    # 2015-12-21: Added so we could move objects along with the DataView.
+    # Allow developer to move objects along with the DataView.
     dispatch "DataViewDidUpdateView" to me
   end if
 
@@ -2935,13 +2424,14 @@ end RenderRows
 
 
 /**
-* \brief Removes the specified row from the view. Use when data is removed from the model.
-*
-* \param pRows The rows to delete.
+Summary: Removes the specified row from the view. Use when data is removed from the model.
+
+Parameters:
+pRows The rows to delete.
 *
 * This handler is most useful when caching is turned on.
-*
-* \return empty
+
+Returns: empty
 */
 command DeleteRows pRows
   local theRow, theCacheKey, theItemNo
@@ -2983,7 +2473,7 @@ command DeleteRows pRows
 
   # If caching is on then all row -> cache keys must be updated.
   if not clearTheCache then
-    _UpdateControlCache 0, 0 # This cleans up the current rows in use (HAS to happen before refreshing cache keys otherwise cached keys and rows won't match up)
+    _UpdateControlCacheForActiveRange 0, 0 # This cleans up the current rows in use (HAS to happen before refreshing cache keys otherwise cached keys and rows won't match up)
     _RefreshRowCacheKeys # This remaps data cache keys to the appropriate row.
   end if
 
@@ -3004,7 +2494,7 @@ Summary: Handles cleanup of a control based on cache setting.
 */
 private command _CleanupControl pCacheKey, pRow, pControl
   if the viewProp["cache"] of me is not among the items of "eager,lazy" then
-    _MoveCachedControlBackIntoCacheBin pCacheKey, pRow # this sends cleanup message
+    _MoveControlIntoUnusedCachePool pCacheKey, pRow # this sends cleanup message
   else
     # Send message to control telling it to clean up after itself
     dispatch "CleanupAfterRowControl" to pControl
@@ -3025,7 +2515,7 @@ end _CleanupControl
 
 
 /**
-* \brief Makes sure that the "hilited rows" and "first selected row" are in bounds for how many rows are in view.
+Summary: Makes sure that the "hilited rows" and "first selected row" are in bounds for how many rows are in view.
 *
 * This is useful after internal operations which might remove rows from the view.
 *
@@ -3051,14 +2541,15 @@ end _EnsureIntegrityOfSelectedRows
 
 
 /**
-* \brief Moves the control for an index back into the list of available controls.
-*
-* \param pCacheKey The cache key of the control to move back to to the cache of available controls.
-* \param [pRow] Pass in the row to dissassociate the row with the the cache key.
-*
-* \return empty
+Summary: Moves the control for an index back into the list of available controls.
+
+Parameters:
+pCacheKey: The cache key of the control to move back to to the cache of available controls.
+pRow: Pass in the row to dissassociate the row with the the cache key.
+
+Returns: empty
 */
-private command _MoveCachedControlBackIntoCacheBin pCacheKey, pRow
+private command _MoveControlIntoUnusedCachePool pCacheKey, pRow
   local theControl, theItemNo, removeFromCache
 
   put sViewPropsA["controls"]["cache"][pCacheKey]["control"] into theControl
@@ -3082,15 +2573,16 @@ private command _MoveCachedControlBackIntoCacheBin pCacheKey, pRow
   end if
 
   return empty
-end _MoveCachedControlBackIntoCacheBin
+end _MoveControlIntoUnusedCachePool
 
 
 /**
-* \brief Resizes the specified row controls. Useful for cached controls that can be resized by the user.
-*
-* \param pRows
-*
-* \return empty
+Summary: Resizes the specified row controls. Useful for cached controls that can be resized by the user.
+
+Parameters:
+pRows
+
+Returns: empty
 */
 command ResizeRows pRows
   local theRow
@@ -3111,11 +2603,11 @@ end ResizeRows
 
 
 /**
-* \brief Sets the values for scrollbars based on the content in the control.
+Summary: Sets the values for scrollbars based on the content in the control.
 *
 * This handler will maintain the current thumbposition of the scrollbar value.
-*
-* \return empty
+
+Returns: empty
 */
 private command _ConfigureScrollbars
   local msgsAreLocked, theWindowHeight
@@ -3173,7 +2665,7 @@ end _ConfigureScrollbars
 
 
 /**
-* \brief Prcoesses the message for the scrollbars.
+Summary: Prcoesses the message for the scrollbars.
 *
 */
 on scrollbarDrag pValue
@@ -3188,9 +2680,9 @@ end scrollbarDrag
 
 
 /**
-* \brief Called by mobile scrollbars.
-*
-* \return empty
+Summary: Called by mobile scrollbars.
+
+Returns: empty
 */
 on scrollerDidScroll pOffsetX, pOffsetY
   -- Set the scroll values of the group based on feedback from the scroller
@@ -3282,9 +2774,9 @@ end _SetVScroll
 
 
 /**
-* \brief Returns the percentage of the vscroll thumb.
-*
-* \return percentage.
+Summary: Returns the percentage of the vscroll thumb.
+
+Returns: percentage.
 */
 private function _GetVScrollPercent
   local theWorkingEndValue
@@ -3299,11 +2791,12 @@ end _GetVScrollPercent
 
 
 /**
-* \brief Returns the percentage of the vscroll thumb.
-*
-* \param pPercent The percentage to set the vscroll to.
-*
-* \return percentage.
+Summary: Returns the percentage of the vscroll thumb.
+
+Parameters:
+pPercent The percentage to set the vscroll to.
+
+Returns: percentage.
 */
 private command _SetVScrollPercent pPercent
   local theWorkingEndValue
@@ -3313,9 +2806,9 @@ end _SetVScrollPercent
 
 
 /**
-* \brief Draws the control based on current properties.
-*
-* \return Returns true if the "content height" changed while drawing.
+Summary: Draws the control based on current properties.
+
+Returns: Returns true if the "content height" changed while drawing.
 */
 command RenderVisibleRows
   local theDataA, theStyle
@@ -3343,7 +2836,7 @@ command RenderVisibleRows
 
   ## Update the pool of available controls
   ## and reset list of rows in use
-  _UpdateControlCache theStartRow, theEndRow
+  _UpdateControlCacheForActiveRange theStartRow, theEndRow
 
   set the viewProp["first working row"] of me to theStartRow # in case developer wants to access
   set the viewProp["last working row"] of me to theEndRow
@@ -3426,12 +2919,13 @@ end RenderVisibleRows
 
 
 /**
-* \brief Returns the cache key in sViewPropsA["controls"]["cache"] for a given row.
-*
-* \param pRow The row to get the key for.
-* \param pRefreshKey If true then a fresh key will be retrieved for the row. Otherwise an internal cache may be used.
-*
-* \return Key or empty if no control is cached for the specified row.
+Summary: Returns the cache key in sViewPropsA["controls"]["cache"] for a given row.
+
+Parameters:
+pRow The row to get the key for.
+pRefreshKey: If true then a fresh key will be retrieved for the row. Otherwise an internal cache may be used.
+
+Returns: Key or empty if no control is cached for the specified row.
 */
 private function _GetCacheKeyForRow pRow, pRefreshKey
   if pRow is not an integer then
@@ -3460,11 +2954,12 @@ end _GetCacheKeyForRow
 
 
 /**
-* \brief Refreshes the cache key for each row. Only applies if caching is on.
-*
-* \param pRemoveStaleCacheKeys If true then stale caches will be removed. Default is false.
-*
-* \return empty
+Summary: Refreshes the cache key for each row. Only applies if caching is on.
+
+Parameters:
+pRemoveStaleCacheKeys If true then stale caches will be removed. Default is false.
+
+Returns: empty
 */
 private command _RefreshRowCacheKeys pRemoveStaleCacheKeys
   local refreshKeys
@@ -3527,14 +3022,15 @@ end _RefreshRowCacheKeys
 
 
 /**
-* \brief Looks to see if a control needs to be filled in with data (ghost controls) or resized and then peforms necessary actions.
-*
-* \param pRow The row number of the control.
-* \param pRowControl Reference to the row control.
-* \param pRowWidth The width to assign to the row if it must be resized.
-* \param pTopLeft Optional point to set the topleft of the control to.
-*
-* \return Boolean. True if control was updated. False otherwise.
+Summary: Looks to see if a control needs to be filled in with data (ghost controls) or resized and then peforms necessary actions.
+
+Parameters:
+pRow The row number of the control.
+pRowControl: Reference to the row control.
+pRowWidth: The width to assign to the row if it must be resized.
+pTopLeft: Optional point to set the topleft of the control to.
+
+Returns: Boolean. True if control was updated. False otherwise.
 */
 private command _PrepareRowForDisplay pRow, pRowControl, pRowWidth, pTopLeft
   local controlWasUpdated = "false"
@@ -3575,9 +3071,9 @@ end _PrepareRowForDisplay
 
 
 /**
-* \brief Determines the "content height" based on current properties and data.
-*
-* \return empty
+Summary: Determines the "content height" based on current properties and data.
+
+Returns: empty
 */
 private command _CalculateContentHeight pRefreshHeight
   local msgsAreLocked
@@ -3626,7 +3122,7 @@ end _StoreContentHeightForCachedControls
 
 
 /**
-* \brief Hides/shows the scrollbars as appropriate.
+Summary: Hides/shows the scrollbars as appropriate.
 *
 */
 private command _AutoHideScrollbars
@@ -3641,15 +3137,15 @@ private command _AutoHideScrollbars
       ## hide
       if the visible of scrollbar "dvVScrollbar" of me then
         set the visible of scrollbar "dvVScrollbar" of me to false
-        _ResizeListControls
-        _TellControlsToResize
+        _ResizeSupportingControls
+        _ResizeRowControlsAsNeeded
       end if
     else
       ## show
       if not the visible of scrollbar "dvVScrollbar" of me then
         set the visible of scrollbar "dvVScrollbar" of me to true
-        _ResizeListControls
-        _TellControlsToResize
+        _ResizeSupportingControls
+        _ResizeRowControlsAsNeeded
       end if
     end if
   end if
@@ -3661,16 +3157,18 @@ end _AutoHideScrollbars
 
 
 /**
-* \brief Caches controls for all rows in the view.
-*
-* \param pRefreshDataInCachedControls If true and caching is on then cached controls will not have data updated. Only non-existent controls will be added to the cache. This can speed things up when refreshing due to row order changing.
-*
-* How controls are cached is dependent on the 'cache' setting.
-* If 'cache' is set to 'eager" then all rows are cached with FillInData being sent to them.
-* If 'cache' is set to "lazy" then a ghost control is cached meaning
-* that no FillInData message is sent.
-*
-* \return empty
+Summary: Caches controls for all rows in the view.
+
+Parameters:
+pRefreshDataInCachedControls: If true and caching is on then cached controls will not have data updated. Only non-existent controls will be added to the cache. This can speed things up when refreshing due to row order changing.
+
+Description:
+How controls are cached is dependent on the 'cache' setting.
+If 'cache' is set to `eager` then all rows are cached with FillInData being sent to them.
+If 'cache' is set to `lazy` then a ghost control is cached meaning
+that no FillInData message is sent.
+
+Returns: empty
 */
 private command _CacheControls pRefreshDataInCachedControls
   local theRowCount, theRow
@@ -3715,13 +3213,14 @@ end _CacheControls
 
 
 /**
-* \brief Sets up a control for a row. Data will be filled in or cached with control based on 'cache' property.
-*
-* \param pRow Row to set up control for.
-* \param pRowControl If passed in then used as the row control and data within it is updated. Otherwise one is provided. Passing it in is used when refreshing cached controls with new data.
-* \param pForceFillInData Pass in true to force FillInData to be sent, even if lazy caching is set. Used if you are definitly about to display the row.
-*
-* \return Control reference
+Summary: Sets up a control for a row. Data will be filled in or cached with control based on 'cache' property.
+
+Parameters:
+pRow Row to set up control for.
+pRowControl: If passed in then used as the row control and data within it is updated. Otherwise one is provided. Passing it in is used when refreshing cached controls with new data.
+pForceFillInData: Pass in true to force FillInData to be sent, even if lazy caching is set. Used if you are definitly about to display the row.
+
+Returns: Control reference
 */
 private command _SetupRowControl pRow, pRowControl, pForceFillInData
   local theDataA
@@ -3777,9 +3276,10 @@ end _SetupRowControl
 
 /**
 *\brief Resizes controls by adjusting their width and calling LayoutControl.
-*
-* \param pStartRow First row in range of rows to resize. Default is 1.
-* \param pEndrow Last row in range of rows to resize. Default is number of rows.
+
+Parameters:
+pStartRow First row in range of rows to resize. Default is 1.
+pEndrow: Last row in range of rows to resize. Default is number of rows.
 * \return empty
 */
 private command _ResizeControls pStartRow, pEndRow
@@ -3807,16 +3307,17 @@ end _ResizeControls
 
 
 /**
-* \brief Resizes the width of a control and sends the LayoutControl message. The control will maintain it's current topleft position.
+Summary: Resizes the width of a control and sends the LayoutControl message. The control will maintain it's current topleft position.
 *
 * The LayoutControl handler is responsible for setting the proper height of the row control.
-*
-* \param pRowControl The control to send the message to.
-* \param pRow The row of the control.
-* \param pWidth The width to set pRowControl to.
-* \param pUpdateContentHeight Pass in true to update the "content height" after calling LayoutControl. This is only applicable if 'fixed row height' is false.
-*
-* \return empty
+
+Parameters:
+pRowControl The control to send the message to.
+pRow: The row of the control.
+pWidth: The width to set pRowControl to.
+pUpdateContentHeight: Pass in true to update the "content height" after calling LayoutControl. This is only applicable if 'fixed row height' is false.
+
+Returns: empty
 */
 private command _DispatchLayoutControl pRowControl, pRow, pWidth, pUpdateContentHeight
   local theRect, theVScroll, theIndex, theCacheKey, theResult
@@ -3877,9 +3378,9 @@ end _DispatchLayoutControl
 
 
 /**
-* \brief Deletes all controls, resets the vscroll and clears internal storage.
-*
-* \return empty
+Summary: Deletes all controls, resets the vscroll and clears internal storage.
+
+Returns: empty
 */
 command ResetView
   local i, msgsAreLocked
@@ -3923,11 +3424,12 @@ end ResetView
 
 
 /**
-* \brief Dispatches the "CacheKeyForRow" message. If unhandled then the row number is returned.
-*
-* \param pRow The row to get the cache key for.
-*
-* \return Cache key
+Summary: Dispatches the "CacheKeyForRow" message. If unhandled then the row number is returned.
+
+Parameters:
+pRow: The row to get the cache key for.
+
+Returns: Cache key
 */
 private function _DispatchCacheKeyForRow pRow
   local theCacheKey
@@ -3947,18 +3449,18 @@ private function _DispatchCacheKeyForRow pRow
   else
     # This is fine for views that never change order.
     return pRow
-    --      throw "CacheKeyForRow has not been implemented for the data view control " & quote & the short name of me & quote
   end if
 end _DispatchCacheKeyForRow
 
 
 /**
-* \brief Stores a control in the cache for a row, removing the control from the pool of available controls.
-*
-* \param pRow The row to cache the control for.
-* \param pControl The control to cache.
-*
-* \return empty
+Summary: Stores a control in the cache for a row, removing the control from the pool of available controls.
+
+Parameters:
+pRow The row to cache the control for.
+pControl: The control to cache.
+
+Returns: empty
 */
 private command _CacheRowControl pRow, pControl
   local theLineNo, i, theCacheKey, theOffsetRow
@@ -4003,11 +3505,12 @@ end _CacheRowControl
 
 
 /**
-* \brief Reorders number(s) in a list by sliding them to pPosition.
-*
-* \param pNumberList Master list of numbers. There should be no duplicate entries.
-* \param pNumbers Number(s) to sequence. The numbers do not have to be in pNumberList already.
-* \param pPosition The position to move pNumbers to.
+Summary: Reorders number(s) in a list by sliding them to pPosition.
+
+Parameters:
+pNumberList Master list of numbers. There should be no duplicate entries.
+pNumbers: Number(s) to sequence. The numbers do not have to be in pNumberList already.
+pPosition: The position to move pNumbers to.
 *
 *\return New list of numbers.
 */
@@ -4054,9 +3557,9 @@ private function _ReorderNumbersInList pNumberList, pNumbers, pPosition
 end _ReorderNumbersInList
 
 /*
-* \brief Returns the working top/bottom that will show content. Padding has been taken out.
-*
-* \return top x, bottom x
+Summary: Returns the working top/bottom that will show content. Padding has been taken out.
+
+Returns: top x, bottom x
 */
 function _WorkingTopAndBottomContentCoordinates
   local theWindowHeight, theTopPadding, theBottomPadding
@@ -4071,15 +3574,16 @@ end _WorkingTopAndBottomContentCoordinates
 
 
 /**
-* \brief Determines the range of rows to show based on the current vscroll setting.
-*
-* \param @pStartRow Output contains the row to start on.
-* \param @pEndRow Output contains the row to end on.
-* \param @pStartRowYOffset Output contains the y offset for the first row from the top of the container group. <= 0.
+Summary: Determines the range of rows to show based on the current vscroll setting.
+
+Parameters:
+@pStartRow Output contains the row to start on.
+@pEndRow: Output contains the row to end on.
+@pStartRowYOffset: Output contains the y offset for the first row from the top of the container group. <= 0.
 *
 * If 'fixed row height' is false then controls will be resized in this handler.
-*
-* \return empty
+
+Returns: empty
 */
 private command _GetRangeOfRowsToDisplay @pStartRow, @pEndRow, @pStartRowYOffset
   local theRowCount, theVScroll, theAdditionalHeight
@@ -4305,18 +3809,30 @@ end _GetRangeOfRowsToDisplay
 
 
 /**
-* \brief Updates the cache by removing controls and placing them back in the pool or just hiding them (depends on cache setting), updating 'rows in use' and 'cache indexes'.
-*
-* \param pStartRow The first row that should not be removed from the cache.
-* \param pEndRow The last row that should not be removed from the cache.
-*
-* Any control that falls outside the range of pStartRow and pEnd Row will be placed back in the pool of available controls
-* if they are not being cached. All controls outside of range, regardless of cache setting, will be hidden.
-* In all circumstances 'rows in use' will be updated. 'row cache keys' may be updated.
-*
-* \return empty
+Summary: Syncs the list of active controls based on a new start and end row.
+
+Parameters:
+pStartRow: The first row that should not be removed from the cache.
+pEndRow: The last row that should not be removed from the cache.
+
+Description:
+If `cache` is `none` then two checks are performed against controls that are
+actively in use (`sViewPropsA["controls"]["row cache keys"]`):
+
+1. Is row control is associated with still part of new active range?
+2. If still in range does it's `type` match the `type` of the row it will now be associated with?
+
+If the answer to either condition is `false` then controls are moved out
+of the active list of controls and into `sViewPropsA["controls"]["available"]`.
+
+If `cache` is turned on then any controls outside of the new active range are
+hidden.
+
+`rows in use` will be updated after this handler finishes running.
+
+Returns: empty
 */
-private command _UpdateControlCache pStartRow, pEndRow
+private command _UpdateControlCacheForActiveRange pStartRow, pEndRow
   local theCacheSetting, theCacheKey, theCacheKeys, theRow, theRowControl
   local theRowIndexA
 
@@ -4348,14 +3864,14 @@ private command _UpdateControlCache pStartRow, pEndRow
       # Out of range
       if theRow < pStartRow or theRow > pEndRow then
 
-        _MoveCachedControlBackIntoCacheBin theCacheKey, theRow
+        _MoveControlIntoUnusedCachePool theCacheKey, theRow
 
       else
 
         # Check for match between old row cache key and new row cache key
         put theRow - theOffset into theEffectiveRow
         if line theEffectiveRow of theCacheKeys is not sViewPropsA["controls"]["row cache keys"][theRow] then
-          _MoveCachedControlBackIntoCacheBin theCacheKey, theRow
+          _MoveControlIntoUnusedCachePool theCacheKey, theRow
         end if
 
       end if
@@ -4391,7 +3907,7 @@ private command _UpdateControlCache pStartRow, pEndRow
     end repeat
   end if
 
-  ## Rebuild 'rows in use' using new range
+  ## Rebuild `rows in use` using new range
   put empty into sViewPropsA["controls"]["rows in use"]
   if pStartRow > 0 then
     repeat with theRow = pStartRow to pEndRow
@@ -4401,18 +3917,19 @@ private command _UpdateControlCache pStartRow, pEndRow
   end if
 
   return empty
-end _UpdateControlCache
+end _UpdateControlCacheForActiveRange
 
 
 /**
 *\brief Returns a control of the given style.
-*
-* \param pStyle The style of the control to return.
+
+Parameters:
+pStyle The style of the control to return.
 *
 * If a control with a matching style exists in the "available" list then it will be returned.
 * Otherwise a new control will be created.
-*
-* \return Control reference.
+
+Returns: Control reference.
 */
 private function _GetControlOfStyle pStyle
   local theControl
@@ -4445,11 +3962,12 @@ end _GetControlOfStyle
 
 
 /**
-* \brief Locates a row control that matches pStyle and is not "active" (i.e. is not currently in use).
-*
-* \param pStyle The found control will have this style.
-*
-* \return control reference or empty
+Summary: Locates a row control that matches pStyle and is not "active" (i.e. is not currently in use).
+
+Parameters:
+pStyle The found control will have this style.
+
+Returns: control reference or empty
 */
 private function _FindAvailableControlOfStyle pStyle
   repeat for each line theControl in sViewPropsA["controls"]["available"]
@@ -4465,14 +3983,15 @@ end _FindAvailableControlOfStyle
 
 
 /*
-* \brief Creates a portable control reference.
-*
-* \param pControl
+Summary: Creates a portable control reference.
+
+Parameters:
+pControl
 *
 * All group referneces are removed, the main stack is removed if on a substack
 * and the stack name is shortened.
-*
-* \return Control reference
+
+Returns: Control reference
 */
 private function _CustomControlReference pControl
   -----
@@ -4628,7 +4147,7 @@ end dvDragReorderData
 
 
 /**
-* \brief Defines the default behavior for dvAcceptsDrop. Override in your dataview.
+Summary: Defines the default behavior for dvAcceptsDrop. Override in your dataview.
 *
 */
 getProp dvAcceptsDrop
@@ -4640,11 +4159,12 @@ end dvAcceptsDrop
 
 
 /**
-* \brief Sets the dragImage to a snapshot of a row.
-*
-* \param pRows The row(s) to use as the dragImage.
-*
-* \return Error message
+Summary: Sets the dragImage to a snapshot of a row.
+
+Parameters:
+pRows The row(s) to use as the dragImage.
+
+Returns: Error message
 */
 setprop dvDragImageRow pRows
   local theControl
@@ -4660,12 +4180,13 @@ end dvDragImageRow
 
 
 /**
-* \brief Begins a drag-reorder operation.
-*
-* \param pOriginatingRows The rows that the user started dragging.
-* \param pBoolean True to start the operation, false to stop.
-*
-* \return Error
+Summary: Begins a drag-reorder operation.
+
+Parameters:
+pOriginatingRows The rows that the user started dragging.
+pBoolean: True to start the operation, false to stop.
+
+Returns: Error
 */
 setprop dvTrackDragReorder [pOriginatingRows] pBoolean
   --   # temp
@@ -4738,9 +4259,9 @@ end dvTrackDragReorder
 
 
 /**
-* \brief Returns a boolean value indicating whether or not drag reordering is being tracked.
-*
-* \return Boolean
+Summary: Returns a boolean value indicating whether or not drag reordering is being tracked.
+
+Returns: Boolean
 */
 getProp dvTrackDragReorder
   return sDropStructure["tracking"]
@@ -4748,7 +4269,7 @@ end dvTrackDragReorder
 
 
 /**
-* \brief Implementation of dragEnd for the view. Called from the frontscript.
+Summary: Implementation of dragEnd for the view. Called from the frontscript.
 *
 */
 on dvDragEnd
@@ -4759,7 +4280,7 @@ end dvDragEnd
 
 
 /**
-* \brief Implementation of dragLeave. Called from frontscript.
+Summary: Implementation of dragLeave. Called from frontscript.
 *
 * Check if mouse is outside of control on dragLeave. When mouse leaves window we don't want drag indicator showing.
 *
@@ -4772,7 +4293,7 @@ end dvDragLeave
 
 
 /**
-* \brief Implementation of dragDrop for the view. Called from the frontscript.
+Summary: Implementation of dragDrop for the view. Called from the frontscript.
 *
 * Sends the message DragReorderRows to the control. Parameter one is the row(s) that was being dragged.
 * Parameter two is the new starting row for pTargetRows (assuming a flat list).
@@ -4804,7 +4325,7 @@ end dvDragDrop
 
 
 /**
-* \brief Implementation of dragMove for the view. Called from the frontscript.
+Summary: Implementation of dragMove for the view. Called from the frontscript.
 *
 */
 on dvDragMove pMouseH,pMouseV
@@ -4841,12 +4362,13 @@ end dvDragMove
 
 
 /**
-* \brief Positions the drop indicator during drag/drop operations.
-*
-* \param pMouseH The x mouse location.
-* \param pMouseV The y mouse position.
-*
-* \return empty
+Summary: Positions the drop indicator during drag/drop operations.
+
+Parameters:
+pMouseH The x mouse location.
+pMouseV: The y mouse position.
+
+Returns: empty
 */
 private command _PositionDropIndicator pMouseH, pMouseV
   local i,theX,theY
@@ -5057,12 +4579,13 @@ end _SetDropIndicatorVisibility
 
 
 /**
-* \brief Scrolls the view based on the position of the mouse. Used during drag/drop operations.
-*
-* \param pMouseH The X mouse position.
-* \param pMouseV The Y mouse position.
-*
-* \return empty
+Summary: Scrolls the view based on the position of the mouse. Used during drag/drop operations.
+
+Parameters:
+pMouseH The X mouse position.
+pMouseV: The Y mouse position.
+
+Returns: empty
 */
 private command _ListGroupDragReorderAutoScroll pMouseH, pMouseV
   local theMaskRect
@@ -5119,11 +4642,12 @@ end _ListGroupDragReorderAutoScroll
 
 
 /**
-* \brief Sets the dragImage (and associated properties) using an image created from a control.
-*
-* \param pControl A reference to the control to use as the dragImage.
-*
-* \return empty
+Summary: Sets the dragImage (and associated properties) using an image created from a control.
+
+Parameters:
+pControl A reference to the control to use as the dragImage.
+
+Returns: empty
 */
 private command _CreateDragImageFromControl pControl
   local theImageOffset, isHilited
@@ -5164,9 +4688,9 @@ end _CreateDragImageFromControl
 
 
 /**
-* \brief Returns the card containing this behavior.
-*
-* \return Card reference
+Summary: Returns the card containing this behavior.
+
+Returns: Card reference
 */
 private function _BehaviorCard
   local theCard, theCharNo
@@ -5188,11 +4712,12 @@ end _BehaviorCard
 
 
 /**
-* \brief Returns the card or stack (if no card ref is present) reference of the behavior associated with a control.
-*
-* \param pControl A reference to a control.
-*
-* \return A reference to the card or stack of the behavior.
+Summary: Returns the card or stack (if no card ref is present) reference of the behavior associated with a control.
+
+Parameters:
+pControl A reference to a control.
+
+Returns: A reference to the card or stack of the behavior.
 */
 function CardOfControlBehavior pControl
   local theCard, theCharNo
@@ -5216,11 +4741,12 @@ end CardOfControlBehavior
 
 
 /**
-* \brief Returns the stack reference of a control.
-*
-* \param pControl A reference to a control.
-*
-* \return A reference to the control stack.
+Summary: Returns the stack reference of a control.
+
+Parameters:
+pControl A reference to a control.
+
+Returns: A reference to the control stack.
 */
 private function _StackOf pControl
   local theCharNo
@@ -5242,15 +4768,16 @@ end _StackOf
 --> Field Editing
 
 /**
-* \brief When "true" is passed in then any open field editors will NOT be closed when they normally would. Pass in "false" to turn normal behavior back on.
-*
-* \param pStackRef A reference to the stack that is being suspended.
-* \param pBoolean "true" suspends normal field editor closing behavior. "false" restores normal behavior.
+Summary: When "true" is passed in then any open field editors will NOT be closed when they normally would. Pass in "false" to turn normal behavior back on.
+
+Parameters:
+pStackRef A reference to the stack that is being suspended.
+pBoolean: "true" suspends normal field editor closing behavior. "false" restores normal behavior.
 *
 * Use when a stack is suspended so that a field editor stays open.
 * Note that this message is processed in the actual behavior button rather than in an instance of the data grid.
-*
-* \return empty
+
+Returns: empty
 */
 command SuspendFieldEditorClosing pStackRef, pBoolean
   local theKeyExists
@@ -5277,12 +4804,12 @@ end SuspendFieldEditorClosing
 
 
 /**
-* \brief Returns whether or not a stack is suspended
+Summary: Returns whether or not a stack is suspended
 *
 * Only call on the behavior button, not an instance of the data view. Otherwise the script local
 * won't have the proper value.
-*
-* \return Boolean
+
+Returns: Boolean
 */
 getProp uStackIsSuspended [pStackRef]
   put the long id of pStackRef into pStackRef
@@ -5291,11 +4818,12 @@ end uStackIsSuspended
 
 
 /**
-* \brief Returns whether or not a field editor should close. Called from an instance of the data view.
-*
-* \param pClosingTriggeredBy The event triggering the close. If exitField or closeField then stack check is performed.
-*
-* \return Boolean
+Summary: Returns whether or not a field editor should close. Called from an instance of the data view.
+
+Parameters:
+pClosingTriggeredBy The event triggering the close. If exitField or closeField then stack check is performed.
+
+Returns: Boolean
 */
 private function _ShouldFieldEditorClose pClosingTriggeredBy
   local theTargetStack, theBehaviorStack, theStackIsSuspended, msgsAreLocked
@@ -5317,15 +4845,16 @@ end _ShouldFieldEditorClose
 
 
 /**
-* \brief Scrolls the row into view and dispatches the EditKey message to it.
+Summary: Scrolls the row into view and dispatches the EditKey message to it.
 *
 * It is up to the control to implement the EditKey handler. Normally it will call EditFieldText for
 * the field that edits the targeted key.
-*
-* \param pKey The key to edit.
-* \param pRow The row to edit.
-*
-* \return Error message
+
+Parameters:
+pKey The key to edit.
+pRow: The row to edit.
+
+Returns: Error message
 */
 command EditKeyOfRow pKey, pRow
   local theCacheKey
@@ -5346,12 +4875,13 @@ end EditKeyOfRow
 
 
 /**
-* \brief Opens an editing field for the target field. This allows the user to edit the value for a key.
-*
-* \param pField A reference to the field that will be edited. The editor will appear over the top of this field.
-* \param pKey The key that the field is associated with.
-*
-* \return empty
+Summary: Opens an editing field for the target field. This allows the user to edit the value for a key.
+
+Parameters:
+pField A reference to the field that will be edited. The editor will appear over the top of this field.
+pKey: The key that the field is associated with.
+
+Returns: empty
 */
 command CreateFieldEditorForField pField, pKey
   local msgsAreLocked, theClickLine, theRow
@@ -5519,9 +5049,9 @@ end CreateFieldEditorForField
 
 
 /**
-* \brief Refreshes the editor field content.
-*
-* \return empty
+Summary: Refreshes the editor field content.
+
+Returns: empty
 */
 command RefreshFieldEditorContent
   if there is a sViewPropsA["field editor"]["control"] then
@@ -5532,9 +5062,9 @@ end RefreshFieldEditorContent
 
 
 /**
-* \brief Populates editor field with content.
-*
-* \return empty
+Summary: Populates editor field with content.
+
+Returns: empty
 */
 private command _PopulateFieldEditor pField
   local theRowControl, theRowRect
@@ -5571,14 +5101,15 @@ end _PopulateFieldEditor
 
 
 /**
-* \brief Closes the field editor, optionally saving contents.
-*
-* \param pSaveContents Boolean value specifying whether or not to send messages to save changes.
-* \param pClosingTriggeredBy The system message that triggered the closing.
+Summary: Closes the field editor, optionally saving contents.
+
+Parameters:
+pSaveContents Boolean value specifying whether or not to send messages to save changes.
+pClosingTriggeredBy: The system message that triggered the closing.
 *
 * This is called from the field editor behaviors.
-*
-* \return empty
+
+Returns: empty
 */
 command _CloseFieldEditor pSaveContents, pClosingTriggeredBy
   ## Don't process if field editor is not open
@@ -5594,13 +5125,14 @@ end _CloseFieldEditor
 
 
 /**
-* \brief Removes focus from the editor and sends messages to open the next field editor.
-*
-* \param pClosingTriggeredBy The system message that triggered the closing.
+Summary: Removes focus from the editor and sends messages to open the next field editor.
+
+Parameters:
+pClosingTriggeredBy The system message that triggered the closing.
 *
 * This is called from the field editor behaviors.
-*
-* \return empty
+
+Returns: empty
 */
 command _CloseFieldEditorAndOpenNext pClosingTriggeredBy
   if _ShouldFieldEditorClose(pClosingTriggeredBy) then
@@ -5611,14 +5143,15 @@ end _CloseFieldEditorAndOpenNext
 
 
 /**
-* \brief A helper function that determines if a field editor is open for a field of a particular name.
-*
-* \param pRowObject The row object that is asking the question.
-* \param pFieldName Name of field that might have a field editor open for it.
+Summary: A helper function that determines if a field editor is open for a field of a particular name.
+
+Parameters:
+pRowObject The row object that is asking the question.
+pFieldName: Name of field that might have a field editor open for it.
 *
 * This can be called from a row template.
-*
-* \return Boolean
+
+Returns: Boolean
 */
 function FieldEditorIsOpen pRowObject, pFieldName
   local fieldEditorIsOpen
@@ -5635,12 +5168,12 @@ end FieldEditorIsOpen
 
 
 /**
-* \brief Deletes the field editor, optionally sending messages to save changes made in editor.
+Summary: Deletes the field editor, optionally sending messages to save changes made in editor.
 *
-* \brief pSaveContents Set to true to dispatch message signaling that editor content should be saved.
-* \param pClosingTriggeredBy The system message that triggered the closing.
-*
-* \return Empty or "cancel"
+Summary: pSaveContents Set to true to dispatch message signaling that editor content should be saved.
+pClosingTriggeredBy: The system message that triggered the closing.
+
+Returns: Empty or "cancel"
 */
 command DeleteFieldEditor pSaveContents, pClosingTriggeredBy
   local theFocusedObject, msgsAreLocked, contentHasChanged
@@ -5756,10 +5289,11 @@ end _DeleteFieldEditor
 
 
 /**
-* \brief Deletes the field editor and sends message to view telling it to open next editing field.
-*
-* \param pClosingTriggeredBy The system message that triggered the closing.
-* \param pDirection Pass in a value to force "next" or "previous".
+Summary: Deletes the field editor and sends message to view telling it to open next editing field.
+
+Parameters:
+pClosingTriggeredBy The system message that triggered the closing.
+pDirection: Pass in a value to force "next" or "previous".
 *
 *  The field editor will be closed with changes saved. The "OpenNextFieldEditor" message will then be
 * sent to view so the developer can open another field for editing.
@@ -5767,8 +5301,8 @@ end _DeleteFieldEditor
 *     pRow: the row that was just edited.
 *     pKey: the key that was just edited.
 *     pDirection:either "next" or "previous".
-*
-* \return Empty or "cancel"
+
+Returns: Empty or "cancel"
 */
 command DeleteFieldEditorAndOpenNext pClosingTriggeredBy, pDirection
   local msgsAreLocked, shiftKeyIsDown
@@ -5822,12 +5356,13 @@ end DeleteFieldEditorAndOpenNext
 
 
 /**
-* \brief Adds a "..." to the end of field text if the text of the field is too long.
-*
-* \param pFieldID The id of the field to add the trailer to.
-* \param pTrailer The trailer text. The default is "..." if empty.
-*
-* \return Boolean. True if text was trailed off. False otherwise.
+Summary: Adds a "..." to the end of field text if the text of the field is too long.
+
+Parameters:
+pFieldID The id of the field to add the trailer to.
+pTrailer: The trailer text. The default is "..." if empty.
+
+Returns: Boolean. True if text was trailed off. False otherwise.
 */
 command TruncateTail pFieldId, pTrailer
   local msgsAreLocked
@@ -5932,10 +5467,11 @@ local sDeleteAnimationLayer = "false"
 
 
 /**
-* \brief Reveals rows by animating them.
-*
-* \param pRows
-* \param pShowOrHide
+Summary: Reveals rows by animating them.
+
+Parameters:
+pRows
+pShowOrHide:
 *
 */
 private command AnimateRows pRows, pShowOrHide
@@ -6040,11 +5576,12 @@ end aeExitFrame
 
 
 /**
-* \brief Returns the rect where you can draw content in a group without making scrollbars appear.
-*
-* \param pGroup A reference to a group control.
-*
-* \return Rect
+Summary: Returns the rect where you can draw content in a group without making scrollbars appear.
+
+Parameters:
+pGroup A reference to a group control.
+
+Returns: Rect
 */
 private function _WorkingGroupRect pGroup
   local theRect, theWidth
