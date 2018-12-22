@@ -1,18 +1,37 @@
-# DataView helper
+# DataView Helper
 
-A DataView is similar to a DataGrid form.
+A DataView displays rows of data. It is similar to a DataGrid form, a control available in the LiveCode IDE. 
+
+LiveCode Version: 8.x or higher
+Platoforms: Tested on Windows, macOS, and iOS.
+
+A DataView is responsible for taking row data that your code provides and rendering it in a highly customizable way using row templates. Row data is an array of key=>value pairs. Out of the box you can assign a numerically indexed array of arrays with key=>value pairs to a DataView (see example below). But you can customize the data source any way you would like. 
 
 ## Creating a DataView
 
-Need to create an IDE helper for creating a DataView.
+Need to create an IDE helper for creating a DataView. It should also create a default row template.
+
+## Assigning data to a DataView
+
+To test that a new DataView is working you can create a simple numerically indexed array and assign it to it's `uData` property. The default row template displays a "title" key in a field so a simple test would look like this:
+
+```
+put "Row 1" into tDataA[1]["title"]
+put "Row 2" into tDataA[2]["title"]
+put "Row 3" into tDataA[3]["title"]
+
+set the uData of group "MyDataView" to tDataA
+```
 
 ## Customizing row templates
 
-Each row in a DataView is represented by a row template. A row template is simply a `group` that contains all of the controls necessary to display the data for a row. The group has a behavior script assigned to it that contains all of the logic for displaying row data in the template and positioning the controls in the template.
+Each row in a DataView is rendered using a row template. A row template is simply a `group` that contains all of the controls necessary to display the data for a row. The group has a behavior script assigned to it that contains all of the logic for displaying row data in the template and positioning the controls in the template.
 
 ### Mapping row template groups to row styles
 
-Each row in a DataView has a style assigned to it. The default style is `default` but you can use style names of your choosing. Each style needs to be mapped to a group serving as a row template. You map a row template group to a row style through the `row style templates` property of a DataView. This property is an array whose keys are style names and values are a reference to a group control. Here is a simple example:
+Each row in a DataView has a style assigned to it. The default style is `default` and that is the only style that is supported if you are using the data controller behavior script assigned to a DataView by default. If you create a [custom data controller script](#Creating-a-custom-data-controller) then you can use style names of your choosing. 
+
+Each style needs to be mapped to a group serving as a row template. You map a row template group to a row style through the `row style templates` property of a DataView. This property is an array whose keys are style names and values are a reference to a group control. Here is a simple example:
 
 ```
 put the long id of group "MyRowTemplate" of stack "MyRowTemplateStack" \
@@ -80,12 +99,106 @@ pDirection: next/previous
 `HideDropIndicator`
 `ShowDropIndicator`
 
-## Creating your own custom DataView controller
+## Creating a custom data controller
 
-Remove the `DataView Controller` behavior and handle the following:
+A DataView doesn't have any internal knowledge of the data that it is displaying. Each time it displays a row it asks the outside world to provide the data for that row. When it needs to know how many total rows it should display it also asks the outside world. The code that provides that data can be thought of a data controller. The data controller script orchestrates moving data from a data source into a DataView and saving any changes made to data within the DataView back to the data source.
 
-`DataForRow pRow, @rDataA, @rTemplateStyle`
-`NumberOfRows`
-`CacheKeyForRow pRow`
+The DataView helper comes with a data controller script (`dataview_controller.livecodescript`) that is assigned as a behavior of a new DataView. This data controller script allows you to assign a numerically indexed array of data to the `uData` property of the DataView. It will then handle feeding the data in that array to the DataView.
 
-Feed it with a database cursor, an array, etc.
+For more advanced cases you can remove this data controller script as the behavior and use your own data controller code. That code can reside in a different behavior script that you assign to the DataView or it might exist in another script in the message hierarchy – e.g. a `group` that the DataView is in or in the `card` or `stack` script. Regardless of where your data controller code is located, you will need to handle one message and two functions. The message is `DataForRow` and the functions are `NumberOfRows()` and `CacheKeyForRow()`. These handlers will be sent and called when you send the `RenderView` command to the DataView.
+
+Let's look at each in turn. In the example code for each handler assume that `sData` is a numerically indexed array.
+
+### DataForRow message
+
+The `DataForRow` message is sent whenever the DataView needs data to associate with a row. It takes three parameters:
+
+```
+DataForRow pRow, @rDataA, @rTemplateStyle
+```
+
+- `pRow` is the number of the row that you should provide data for.
+- `rDataA` is an array that you populate with the data needed to display the row.
+- `rTemplateStyle` is the style to associate with the row. If you don't provide a value then `default` will be used.
+
+Example 1:
+
+```
+command DataForRow pRow, @rDataA, @rTemplateStyle
+  put sDataA[pRow] into rDataA
+  put "default" into rTemplateStyle
+end DataForRow
+```
+
+Example 2:
+
+```
+command DataForRow pRow, @rDataA, @rTemplateStyle
+  sqlquery_moveToRecord sQueryA, pRow
+  put sqlquery_currentRowToArray(sQueryA) into rDataA
+  put "default" into rTemplateStyle
+end DataForRow
+```
+
+### NumberOfRows function
+
+The `NumberOfRows()` function must return the number of rows being displayed in the DataView.
+
+Example 1:
+
+```
+function NumberOfRows
+  return the number of elements of sDataA
+end NumberOfRows
+```
+
+Example 2:
+
+```
+function NumberOfRows
+  return sqlquery_get(sQueryA, "number of records")
+end NumberOfRows
+```
+
+### CacheKeyForRow function
+
+The `CacheKeyForRow()` function must return a unique identifier for each row. If you don't define the `CacheKeyForRow()` function in the message path then the DataView will use the row number to uniquely identify each row. If your DataView is displaying a flat list of data that cannot be reordered and that never toggles the visibility of rows then there is nothing further that needs to be done. 
+
+If, however, the row that data in your data source is associated with can change inbetween calls to `ResetView` then you must handle `CacheKeyForRow()` and return a unique identifier for the row. For example, the primary key column from a database table will be adequate in most cases. If your DataView is displaying records from multiple tables then the primary key might not be sufficient as the primary keys from two different tables aren't necessarily unique.
+
+```
+CacheKeyForRow pRow
+```
+
+Example 1:
+
+```
+function CacheKeyForRow pRow
+  return pRow
+end CacheKeyForRow
+```
+
+Example 2:
+
+```
+function CacheKeyForRow pRow
+  return sDataA[pRow]["id"]
+end CacheKeyForRow
+```
+
+Example 3:
+
+```
+function CacheKeyForRow pRow
+  return revDatabaseColumnNamed(sCursorId, "id")
+end CacheKeyForRow
+```
+
+## Specifing whether or not a row is selectable
+
+If your DataView has rows that should not be selectable by the user then return false for the `dvCanSelect` property of the row template. The following script can be added to a row template behavior:
+
+```
+getProp dvCanSelect
+  return false
+end dvCanSelect
