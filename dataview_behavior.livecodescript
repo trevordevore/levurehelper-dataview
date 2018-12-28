@@ -1647,18 +1647,6 @@ on mouseDown pMouseBtnNum
 end mouseDown
 
 
---after mouseDown pMouseBtnNum
---   if the environment is not "mobile" then
---      # For more complicated dataview behavior the developer may
---      # want to call dvMouseDownAfter manually.
---      if the viewProp["process mousedown"] of me is not false then
---         dvMouseDownAfter pMouseBtnNum
---      end if
---   end if
---   pass mousedown
---end mouseDown
-
-
 on mouseUp pMouseBtnNum
   if the environment is not "mobile" then
     dvMouseUp pMouseBtnNum
