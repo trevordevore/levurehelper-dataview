@@ -1869,69 +1869,69 @@ command dvMouseDownBefore pMouseBtnNum
         put empty into theHilitedRows
         repeat with i = min(theRow, sViewPropsA["first selected row"]) to \
               max(theRow, sViewPropsA["first selected row"])
-        put i & "," after theHilitedRows
-      end repeat
-      delete the last char of theHilitedRows
+          put i & "," after theHilitedRows
+        end repeat
+        delete the last char of theHilitedRows
 
-      sort items of theHilitedRows numeric ascending
+        sort items of theHilitedRows numeric ascending
 
-      # Is selection list changing?
-      if sMouseDownA["previously hilited rows"] is not theHilitedRows then
-        put theHilitedRows into sViewPropsA["hilited rows"]
-        _HiliteRowsInVisibleControls
-        put true into sMouseDownA["selection changed"]
-      end if
+        # Is selection list changing?
+        if sMouseDownA["previously hilited rows"] is not theHilitedRows then
+          put theHilitedRows into sViewPropsA["hilited rows"]
+          _HiliteRowsInVisibleControls
+          put true into sMouseDownA["selection changed"]
+        end if
 
-    else
-      ## If clicking on a selected control then delay deselecting until mouseUp.
-      ## This allows for drag/drop of multi controls.
-      ## Only applies if no modifier is down or option is down as option can be used for dragging.
-      if the viewProp["multiple lines"] of me and theRow is among the items of sViewPropsA["hilited rows"] AND ( _IsThisModifierSetActive("") OR _IsThisModifierSetActive("option-control") ) then
-        put true into sViewPropsA["deselect on mouseUp"]
       else
-        # We only need to select if control isn't already the selected row
-        if theRow is not sViewPropsA["hilited rows"] then
-          if the viewProp["select on mouseUp"] of me then
-            put theControl into sViewPropsA["select on mouseUp"]
-          else
-            # Select in after handler
-            put theControl into sMouseDownA["select control"]
+        ## If clicking on a selected control then delay deselecting until mouseUp.
+        ## This allows for drag/drop of multi controls.
+        ## Only applies if no modifier is down or option is down as option can be used for dragging.
+        if the viewProp["multiple lines"] of me and theRow is among the items of sViewPropsA["hilited rows"] AND ( _IsThisModifierSetActive("") OR _IsThisModifierSetActive("option-control") ) then
+          put true into sViewPropsA["deselect on mouseUp"]
+        else
+          # We only need to select if control isn't already the selected row
+          if theRow is not sViewPropsA["hilited rows"] then
+            if the viewProp["select on mouseUp"] of me then
+              put theControl into sViewPropsA["select on mouseUp"]
+            else
+              # Select in after handler
+              put theControl into sMouseDownA["select control"]
+            end if
           end if
         end if
       end if
-    end if
 
-  else if pMouseBtnNum is 3 then
-    ## right-click only changes selection if clicking on index that isn't highlighted
-    ## OR there is more than one row selected and "multiple lines" is turned off
-    if theRow is not among the items of theHilitedRows \
-          or (the number of items of theHilitedRows > 1 and not the viewProp["multiple lines"] of me) then
-      ## Same behavior as mouseclick 1
-      ## single click always inserts index into first index var
-      put theRow into sViewPropsA["first selected row"]
+    else if pMouseBtnNum is 3 then
+      ## right-click only changes selection if clicking on index that isn't highlighted
+      ## OR there is more than one row selected and "multiple lines" is turned off
+      if theRow is not among the items of theHilitedRows \
+            or (the number of items of theHilitedRows > 1 and not the viewProp["multiple lines"] of me) then
+        ## Same behavior as mouseclick 1
+        ## single click always inserts index into first index var
+        put theRow into sViewPropsA["first selected row"]
 
-      put theRow into sViewPropsA["hilited rows"]
-      _HiliteRowsInVisibleControls
+        put theRow into sViewPropsA["hilited rows"]
+        _HiliteRowsInVisibleControls
 
-      # This is the only place we send selection changed prior to the developer getting the message
-      # as the selection needs to occur prior to showing contextual menus.
-      unlock screen
-      _SelectionChanged sMouseDownA["previously hilited rows"]
-      put empty into sMouseDownA
-    else
-      unlock screen
-      put empty into sMouseDownA
+        # This is the only place we send selection changed prior to the developer getting the message
+        # as the selection needs to occur prior to showing contextual menus.
+        unlock screen
+        _SelectionChanged sMouseDownA["previously hilited rows"]
+        put empty into sMouseDownA
+      else
+        unlock screen
+        put empty into sMouseDownA
+      end if
     end if
   end if
-end if
 
-return empty
+  return empty
 end dvMouseDownBefore
 
 
 /**
 Summary: Sends the selection changed message or updates hilited rows after developer mouseDown is processed.
-*
+
 */
 command dvMouseDownAfter pMouseBtnNum
   if the keys of sMouseDownA is empty then exit dvMouseDownAfter
