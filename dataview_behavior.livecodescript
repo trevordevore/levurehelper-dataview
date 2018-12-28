@@ -605,7 +605,7 @@ end FlagRowForResize
 
 
 /**
-Summary: Returns whether or not a row control is highlighted.
+Summary: Returns whether or not a row control is currently selected.
 
 Returns: boolean
 */
@@ -640,10 +640,10 @@ end dvHilitedRows
 Summary: Alias to dvHilitedRows.
 
 Parameters:
-pRow Row to hilite.
+pRows: Row(s) to hilite.
 pForceScroll: Will scroll the rows into view, regardless of whether or not the highlighted rows changed (unless the "scroll selections into view" property is false).
 
-Returns: Error message
+Returns: Boolean value specifying whether or not the selected rows changed.
 */
 setprop dvHilitedRow[pForceScroll] pRows
   local theRowsChanged
@@ -667,10 +667,10 @@ end dvHilitedRow
 Summary: Sets the list of rows that are hilited in the control.
 
 Parameters:
-pRows List of rows to hilite.
+pRows: List of rows to hilite.
 pForceScroll: Will scroll the rows into view, regardless of whether or not the highlighted rows changed (unless the "scroll selections into view" property is false).
 
-Returns: Error message
+Returns: Boolean value specifying whether or not the selected rows changed.
 */
 setprop dvHilitedRows[pForceScroll] pRows
   set the dvHilitedRow[pForceScroll] of me to pRows
@@ -679,9 +679,10 @@ end dvHilitedRows
 
 
 /**
-* Returns the controls associated with a row.
-*
-* This may return empty if the row is not visible and caching is not turned on.
+Summary: Returns the control associated with a row.
+
+Description:
+This may return empty if the row is not visible and caching is not turned on.
 
 Returns: Control reference
 */
@@ -692,8 +693,11 @@ end dvControlOfRow
 
 /**
 Summary: Returns whether or not a row has been rendered. It it hasn't been rendered then it is a ghost control.
-*
-* This property is useful when caching is set to "lazy".
+
+Description:
+This property is useful when caching is set to "lazy".
+
+Returns: Boolean
 */
 getProp dvControlHasBeenRendered
   if the dvRowControl of the target is not empty then
@@ -706,6 +710,16 @@ end dvControlHasBeenRendered
 
 /**
 Summary: Returns all controls in the data view cache.
+
+Description:
+Returns a list of all controls that have been created for the rows in the DataView.
+If `cache` is `none` this this list will only contains controls for rows that are visible.
+If `cache` is `lazy` or `eager` then it will be a list of control for all rows in the
+DataView.
+
+Note that if `cache` is `lazy` then it is possible that not all controls have been
+rendered yet. You can use the `dvControlHasBeenRendered` property to check whether
+or not the control has been rendered.
 
 Returns: CR delimited list of controls
 */
@@ -726,8 +740,7 @@ Summary: Dispatchs the selectedRowChanged message to the behavior instance.
 
 Parameters:
 pPreviouslyHilitedRows The list of rows that were hilited prior to the selection changing.
-*
-* return empty
+
 */
 private command _SelectionChanged pPreviouslyHilitedRows
   dispatch "selectedRowChanged" with sViewPropsA["hilited rows"], pPreviouslyHilitedRows
@@ -915,7 +928,7 @@ end dvRectOfRow
 
 
 /**
-* |brief Returns the rect of a row in relative space
+Summary: Returns the rect of a row in relative space
 
 Parameters:
 pRow The row to get the rect for.
@@ -994,8 +1007,7 @@ Summary: Scrolls the row to the top or bottom of the view.
 
 Parameters:
 pRow The row to scroll.
-pPlacement: Top or bottom.
-*
+pPlacement: `top` or `bottom`.
 */
 command ScrollRowTo pRow, pPlacement
   _ScrollRow pRow, pPlacement, true
@@ -1008,7 +1020,7 @@ Summary: Scrolls the specified row into view.
 
 Parameters:
 pRow Row to scroll into view.
-pPlacement: Optional parameter specifying whether row should be displayed at top or bottom of view. "top" or "bottom".
+pPlacement: Optional parameter specifying whether row should be displayed at `top` or `bottom` of view.
 
 Returns: Error message
 */
@@ -1022,9 +1034,9 @@ end ScrollRowIntoView
 Summary: Scrolls a row into view.
 
 Parameters:
-pRow The row to scroll.
-* \param [pPlacement] empty, "top" or "bottom".
-* \param [pForceScroll] Pass in true along with pPlacement to force a row to top or bottom.
+pRow: The row to scroll.
+pPlacement: empty, `top` or `bottom`.
+pForceScroll: Pass in true along with `pPlacement` to force a row to top or bottom.
 
 Returns: Error
 */
@@ -1144,7 +1156,7 @@ end _ScrollRow
 Summary: Scrolls the specified rectangle into view. You can provide a padding for the top/bottom so that rect has spacing between top/bottom of view.
 
 Parameters:
-pRect The rectangle to scroll into view.
+pRect: The rectangle to scroll into view.
 pPadding: A rectangle specifying the padding to use. Only item 2 and 4 are used at this time.
 
 Returns: empty
@@ -1232,7 +1244,7 @@ end ScrollRectIntoView
 
 
 /**
-* |brief Scrolls the text selection into view.
+Summary: Scrolls the text selection into view.
 
 Returns: empty
 */
@@ -1337,7 +1349,7 @@ end _HiliteRowsInVisibleControls
 Summary: Turns the hilite for a control on/off.
 
 Parameters:
-pControl Control reference.
+pControl: Control reference.
 pBoolean: Whether or not to turn hilite on.
 
 Returns: empty
@@ -1472,9 +1484,12 @@ end _ColorToRGB
 /**
 Summary: Tells you whether the provided list of modifier keys are depressed.
 
-pModifiers: List of keys to check. Any combination of "shift", "option", "command", "control" or "option-control".
+Parameters:
+pModifiers: List of keys to check. Any combination of `shift`, `option`, `command`, `control` or `option-control`.
 
-Description: "option-control" will check for option on macos and control on other platforms. Use this for copy operations.
+Description:
+`option-control` will check for option on macos and control on other platforms.
+Use this for copy operations.
 
 Returns: true/false
 */
@@ -1538,8 +1553,9 @@ end _IsThisModifierSetActive
 
 /**
 Summary: Implements scroll wheel scrolling for the control.
-*
-* pKeyNum See LiveCode docs.
+
+Parameters:
+pKeyNum: See LiveCode docs.
 
 Returns: empty
 */
@@ -1727,7 +1743,7 @@ end touchEnd
 
 /**
 Summary: Sent in cases where user touches row, holds but then starts scrolling.
-*
+
 */
 on touchRelease
   set the dvHilitedRows of me to empty
@@ -1735,8 +1751,8 @@ end touchRelease
 
 
 /**
-* |brief Determines whether a left or right swipe has occurred on the data view.
-*
+Summary: Determines whether a left or right swipe has occurred on the data view.
+
 */
 on touchMove pId, pX, pY
   ## Swipe is with one finger
@@ -1765,7 +1781,7 @@ local sMouseDownA # before handler stores data in this variable that after handl
 
 /**
 Summary: Developers who override mousedown can use this call.
-*
+
 */
 command dvMouseDown pMouseBtnNum
   dvMouseDownBefore pMouseBtnNum
@@ -1775,7 +1791,7 @@ end dvMouseDown
 
 /**
 Summary: Selects rows in the view prior to the developer mouseDown being processed.
-*
+
 */
 command dvMouseDownBefore pMouseBtnNum
   # If user is holding down command or option then mouseDown is sent to an editable field.
@@ -1943,6 +1959,10 @@ command dvMouseDownAfter pMouseBtnNum
 end dvMouseDownAfter
 
 
+/**
+Summary: Handles special cases where selection occurs on `mouseUp`.
+
+*/
 command dvMouseUp pMouseBtnNum
   if sViewPropsA["deselect on mouseUp"] then
     _SelectControl
@@ -1960,17 +1980,32 @@ command dvMouseUp pMouseBtnNum
 end dvMouseUp
 
 
+/**
+Summary: Handles special cases where selection occurs on `mouseUp`.
+
+*/
 on dvMouseRelease pMouseBtnNum
   put false into sViewPropsA["deselect on mouseUp"]
   return empty
 end dvMouseRelease
 
 
+/**
+Summary: Returns the long id of the DataView control.
+
+*/
 getProp dvControl
   return the long id of me
 end dvControl
 
 
+/**
+Summary: Can be used to focus on or remove focus from the DataView.
+
+Parameters:
+pBoolean: `true` to focus on DataView. `false` to focus on nothing.
+
+*/
 setProp dvFocus pBoolean
   if pBoolean then
     if the long id of me is not in the long id of the focusedObject then
@@ -1982,6 +2017,39 @@ setProp dvFocus pBoolean
 end dvFocus
 
 
+/**
+Summary: Returns properties for the DataView.
+
+Parameters:
+pProp: The property to get.
+
+Description:
+Table of properties:
+
+| Name | Description |
+|:---- |:----------- |
+| `number of rows` | The number of rows in the DataView. Dispatches the `NumberOfRows` function. |
+| `cache` |  |
+| `opaque` |  |
+| `background color` |  |
+| `vscroll` |  |
+| `vscroll percent` |  |
+| `drop indicator template` |  |
+| `row style templates` |  |
+| `content width` |  |
+| `content window height` |  |
+| `content window rect` |  |
+| `field editor is open` |  |
+| `field editor` |  |
+| `field editor name` |  |
+| `field editor content has changed` |  |
+
+| `effective scrollbar width` |  |
+| `scrollbar is visible` |  |
+| `first selected row` |  |
+
+Returns: Mixed
+*/
 getProp viewProp [pProp]
   switch pProp
     case "number of rows"
@@ -2069,6 +2137,29 @@ getProp viewProp [pProp]
 end viewProp
 
 
+/**
+Summary: Sets properties on the DataView.
+
+Parameters:
+pProp: The property to set.
+pValue: The value to set the property to.
+
+Description:
+Table of properties that can be set:
+
+| Name | Description |
+|:---- |:----------- |
+| `cache` | `none`, `lazy`, or `eager` |
+| `opaque` |  |
+| `background color` |  |
+| `vscroll` |  |
+| `vscroll percent` |  |
+| `drop indicator template` |  |
+| `row style templates` |  |
+| `hilite color` |  |
+
+Returns: nothing
+*/
 setProp viewProp [pProp] pValue
   ## Cleansing
   switch pProp
@@ -2138,9 +2229,10 @@ end _GetContentWindowHeight
 
 /**
 Summary: Renders the data in the view using the current vscroll. The 'hilited rows' property will be reset.
-*
-* All controls will be updated with latest data. If caching is on this means all controls get new data.
-* Any controls which have not yet been cached will be cached during this call. No controls will be recreated.
+
+Description:
+All controls will be updated with latest data. If caching is on this means all controls get new data.
+Any controls which have not yet been cached will be cached during this call. No controls will be recreated.
 
 Returns: empty
 */
@@ -2157,9 +2249,6 @@ Summary: Internal helper which renders the data in the view using the current vs
 
 Parameters:
 pRefreshDataInCachedControls If false and caching is on then cached controls will not have data updated. Only non-existent controls will be added to the cache. This can speed things up when refreshing due to row order changing.
-*
-* All controls will be updated with latest data. If caching is on this means all controls get new data.
-* Any controls which have not yet been cached will be cached during this call. No controls will be recreated.
 
 Returns: empty
 */
@@ -2281,9 +2370,10 @@ end _RunRenderViewAgain
 
 /**
 Summary: Fills in starting values for heights for all rows when row heights are not fixed and caching is not on.
-*
-* Currently each row is seeded with a NULL value. This helps us determine which ones have
-* been sized and which ones haven't.
+
+Description:
+Currently each row is seeded with a NULL value. This helps us determine which ones have
+been sized and which ones haven't.
 */
 private command _InitializeHeightsForVariableSizedRows
   local theRow
@@ -2311,13 +2401,14 @@ end _InitializeHeightsForVariableSizedRows
 
 /**
 Summary: Refresh the view by making sure the proper data is mapped to the proper row.
-*
-* The purpose of this handler is to ensure that the proper data is mapped to the proper row
-* in the view. It can be called after reordering rows, deleting rows, adding rows, etc.
-*
-* If caching is on then the cache keys for each row will be updated, clearing controls as necessary, and any new controls will be initialized/displayed.
-*
-* If caching is off then the normal draw routines are called.
+
+Description:
+The purpose of this handler is to ensure that the proper data is mapped to the proper row
+in the view. It can be called after reordering rows, deleting rows, adding rows, etc.
+
+If caching is on then the cache keys for each row will be updated, clearing controls as necessary, and any new controls will be initialized/displayed.
+
+If caching is off then the normal draw routines are called.
 
 Returns: empty
 */
@@ -2427,8 +2518,9 @@ Summary: Removes the specified row from the view. Use when data is removed from 
 
 Parameters:
 pRows The rows to delete.
-*
-* This handler is most useful when caching is turned on.
+
+Description:
+This handler is most useful when caching is turned on.
 
 Returns: empty
 */
@@ -2515,9 +2607,9 @@ end _CleanupControl
 
 /**
 Summary: Makes sure that the "hilited rows" and "first selected row" are in bounds for how many rows are in view.
-*
-* This is useful after internal operations which might remove rows from the view.
-*
+
+Description:
+This is useful after internal operations which might remove rows from the view.
 */
 private command _EnsureIntegrityOfSelectedRows
   local theRowCount
@@ -2579,7 +2671,7 @@ end _MoveControlIntoUnusedCachePool
 Summary: Resizes the specified row controls. Useful for cached controls that can be resized by the user.
 
 Parameters:
-pRows
+pRows: The rows to resize.
 
 Returns: empty
 */
@@ -2603,8 +2695,9 @@ end ResizeRows
 
 /**
 Summary: Sets the values for scrollbars based on the content in the control.
-*
-* This handler will maintain the current thumbposition of the scrollbar value.
+
+Description:
+This handler will maintain the current thumbposition of the scrollbar value.
 
 Returns: empty
 */
@@ -2665,7 +2758,7 @@ end _ConfigureScrollbars
 
 /**
 Summary: Prcoesses the message for the scrollbars.
-*
+
 */
 on scrollbarDrag pValue
   if the short name of the target is "dvVScrollbar" then
@@ -2681,7 +2774,6 @@ end scrollbarDrag
 /**
 Summary: Called by mobile scrollbars.
 
-Returns: empty
 */
 on scrollerDidScroll pOffsetX, pOffsetY
   -- Set the scroll values of the group based on feedback from the scroller
@@ -2805,9 +2897,9 @@ end _SetVScrollPercent
 
 
 /**
-Summary: Draws the control based on current properties.
+Summary: Renders all visible controls based on current properties.
 
-Returns: Returns true if the "content height" changed while drawing.
+Returns: `true` if the `content height` changed while drawing.
 */
 command RenderVisibleRows
   local theDataA, theStyle
@@ -2921,7 +3013,7 @@ end RenderVisibleRows
 Summary: Returns the cache key in sViewPropsA["controls"]["cache"] for a given row.
 
 Parameters:
-pRow The row to get the key for.
+pRow: The row to get the key for.
 pRefreshKey: If true then a fresh key will be retrieved for the row. Otherwise an internal cache may be used.
 
 Returns: Key or empty if no control is cached for the specified row.
@@ -2956,7 +3048,7 @@ end _GetCacheKeyForRow
 Summary: Refreshes the cache key for each row. Only applies if caching is on.
 
 Parameters:
-pRemoveStaleCacheKeys If true then stale caches will be removed. Default is false.
+pRemoveStaleCacheKeys: If true then stale caches will be removed. Default is false.
 
 Returns: empty
 */
@@ -3024,7 +3116,7 @@ end _RefreshRowCacheKeys
 Summary: Looks to see if a control needs to be filled in with data (ghost controls) or resized and then peforms necessary actions.
 
 Parameters:
-pRow The row number of the control.
+pRow: The row number of the control.
 pRowControl: Reference to the row control.
 pRowWidth: The width to assign to the row if it must be resized.
 pTopLeft: Optional point to set the topleft of the control to.
@@ -3122,7 +3214,7 @@ end _StoreContentHeightForCachedControls
 
 /**
 Summary: Hides/shows the scrollbars as appropriate.
-*
+
 */
 private command _AutoHideScrollbars
   local msgsAreLocked
@@ -3215,7 +3307,7 @@ end _CacheControls
 Summary: Sets up a control for a row. Data will be filled in or cached with control based on 'cache' property.
 
 Parameters:
-pRow Row to set up control for.
+pRow: Row to set up control for.
 pRowControl: If passed in then used as the row control and data within it is updated. Otherwise one is provided. Passing it in is used when refreshing cached controls with new data.
 pForceFillInData: Pass in true to force FillInData to be sent, even if lazy caching is set. Used if you are definitly about to display the row.
 
@@ -3274,12 +3366,13 @@ end _SetupRowControl
 
 
 /**
-*\brief Resizes controls by adjusting their width and calling LayoutControl.
+Summary: Resizes controls by adjusting their width and calling LayoutControl.
 
 Parameters:
 pStartRow First row in range of rows to resize. Default is 1.
 pEndrow: Last row in range of rows to resize. Default is number of rows.
-* \return empty
+
+Returns: empty
 */
 private command _ResizeControls pStartRow, pEndRow
   if sViewPropsA["controls"]["cache"] is an array then
@@ -3307,14 +3400,15 @@ end _ResizeControls
 
 /**
 Summary: Resizes the width of a control and sends the LayoutControl message. The control will maintain it's current topleft position.
-*
-* The LayoutControl handler is responsible for setting the proper height of the row control.
 
 Parameters:
-pRowControl The control to send the message to.
+pRowControl: The control to send the message to.
 pRow: The row of the control.
 pWidth: The width to set pRowControl to.
-pUpdateContentHeight: Pass in true to update the "content height" after calling LayoutControl. This is only applicable if 'fixed row height' is false.
+pUpdateContentHeight: Pass in true to update the `content height` after calling `LayoutControl`. This is only applicable if `fixed row height` is false.
+
+Description:
+The LayoutControl handler is responsible for setting the proper height of the row control.
 
 Returns: empty
 */
@@ -3423,7 +3517,7 @@ end ResetView
 
 
 /**
-Summary: Dispatches the "CacheKeyForRow" message. If unhandled then the row number is returned.
+Summary: Dispatches the `CacheKeyForRow` message. If unhandled then the row number is returned.
 
 Parameters:
 pRow: The row to get the cache key for.
@@ -3456,7 +3550,7 @@ end _DispatchCacheKeyForRow
 Summary: Stores a control in the cache for a row, removing the control from the pool of available controls.
 
 Parameters:
-pRow The row to cache the control for.
+pRow: The row to cache the control for.
 pControl: The control to cache.
 
 Returns: empty
@@ -3510,8 +3604,8 @@ Parameters:
 pNumberList Master list of numbers. There should be no duplicate entries.
 pNumbers: Number(s) to sequence. The numbers do not have to be in pNumberList already.
 pPosition: The position to move pNumbers to.
-*
-*\return New list of numbers.
+
+Returns: New list of numbers.
 */
 private function _ReorderNumbersInList pNumberList, pNumbers, pPosition
   local theItemNo, theNumber, i
@@ -3576,11 +3670,12 @@ end _WorkingTopAndBottomContentCoordinates
 Summary: Determines the range of rows to show based on the current vscroll setting.
 
 Parameters:
-@pStartRow Output contains the row to start on.
+@pStartRow: Output contains the row to start on.
 @pEndRow: Output contains the row to end on.
 @pStartRowYOffset: Output contains the y offset for the first row from the top of the container group. <= 0.
-*
-* If 'fixed row height' is false then controls will be resized in this handler.
+
+Description:
+If `fixed row height` is false then controls will be resized in this handler.
 
 Returns: empty
 */
@@ -3920,13 +4015,14 @@ end _UpdateControlCacheForActiveRange
 
 
 /**
-*\brief Returns a control of the given style.
+Summary: Returns a control of the given style.
 
 Parameters:
-pStyle The style of the control to return.
-*
-* If a control with a matching style exists in the "available" list then it will be returned.
-* Otherwise a new control will be created.
+pStyle: The style of the control to return.
+
+Description:
+If a control with a matching style exists in the "available" list then it will be returned.
+Otherwise a new control will be created.
 
 Returns: Control reference.
 */
@@ -3964,7 +4060,7 @@ end _GetControlOfStyle
 Summary: Locates a row control that matches pStyle and is not "active" (i.e. is not currently in use).
 
 Parameters:
-pStyle The found control will have this style.
+pStyle: The found control will have this style.
 
 Returns: control reference or empty
 */
@@ -3985,10 +4081,11 @@ end _FindAvailableControlOfStyle
 Summary: Creates a portable control reference.
 
 Parameters:
-pControl
-*
-* All group referneces are removed, the main stack is removed if on a substack
-* and the stack name is shortened.
+pControl: Long id of a control.
+
+Description:
+All group referneces are removed, the main stack is removed if on a substack
+and the stack name is shortened.
 
 Returns: Control reference
 */
@@ -4147,7 +4244,13 @@ end dvDragReorderData
 
 /**
 Summary: Defines the default behavior for dvAcceptsDrop. Override in your dataview.
-*
+
+Description:
+You can tell the DataView whether or not a drop can occur above or below a row. This handler
+is called whenever the DataView needs to decide if a drop can occur above or below a row.
+
+Define a `dvAcceptsDrop` getProp handler in your row template or DataView control that
+returns an array with an `above` and `below` key. Each is a boolean value.
 */
 getProp dvAcceptsDrop
   local theA
@@ -4161,7 +4264,7 @@ end dvAcceptsDrop
 Summary: Sets the dragImage to a snapshot of a row.
 
 Parameters:
-pRows The row(s) to use as the dragImage.
+pRows: The row(s) to use as the dragImage.
 
 Returns: Error message
 */
@@ -4182,7 +4285,7 @@ end dvDragImageRow
 Summary: Begins a drag-reorder operation.
 
 Parameters:
-pOriginatingRows The rows that the user started dragging.
+pOriginatingRows: The rows that the user started dragging.
 pBoolean: True to start the operation, false to stop.
 
 Returns: Error
@@ -4269,7 +4372,7 @@ end dvTrackDragReorder
 
 /**
 Summary: Implementation of dragEnd for the view. Called from the frontscript.
-*
+
 */
 on dvDragEnd
   # Any data grid that had dvTrackDragReorder turned on during this drag event must be cleaned up.
@@ -4280,9 +4383,11 @@ end dvDragEnd
 
 /**
 Summary: Implementation of dragLeave. Called from frontscript.
-*
-* Check if mouse is outside of control on dragLeave. When mouse leaves window we don't want drag indicator showing.
-*
+
+Description:
+Check if mouse is outside of control on dragLeave. When mouse leaves window we
+don't want drag indicator showing.
+
 */
 command dvDragLeave
   if the mouseH,the mouseV is not within the viewProp["content window rect"] of me then
@@ -4293,11 +4398,12 @@ end dvDragLeave
 
 /**
 Summary: Implementation of dragDrop for the view. Called from the frontscript.
-*
-* Sends the message DragReorderRows to the control. Parameter one is the row(s) that was being dragged.
-* Parameter two is the new starting row for pTargetRows (assuming a flat list).
-* Parameter three is the row that was dropped after.
-*
+
+Description:
+Sends the message `DragReorderRows` to the control. Parameter one is the row(s) that was being dragged.
+Parameter two is the new starting row for `pTargetRows` (assuming a flat list).
+Parameter three is the row that was dropped after. 0 will be passed if drop was at top of DataView.
+
 */
 on dvDragDrop
   local processTheDrop, theDropStructure
@@ -4325,7 +4431,7 @@ end dvDragDrop
 
 /**
 Summary: Implementation of dragMove for the view. Called from the frontscript.
-*
+
 */
 on dvDragMove pMouseH,pMouseV
 
@@ -4364,7 +4470,7 @@ end dvDragMove
 Summary: Positions the drop indicator during drag/drop operations.
 
 Parameters:
-pMouseH The x mouse location.
+pMouseH: The x mouse location.
 pMouseV: The y mouse position.
 
 Returns: empty
@@ -4581,7 +4687,7 @@ end _SetDropIndicatorVisibility
 Summary: Scrolls the view based on the position of the mouse. Used during drag/drop operations.
 
 Parameters:
-pMouseH The X mouse position.
+pMouseH: The X mouse position.
 pMouseV: The Y mouse position.
 
 Returns: empty
@@ -4644,7 +4750,7 @@ end _ListGroupDragReorderAutoScroll
 Summary: Sets the dragImage (and associated properties) using an image created from a control.
 
 Parameters:
-pControl A reference to the control to use as the dragImage.
+pControl: A reference to the control to use as the dragImage.
 
 Returns: empty
 */
@@ -4714,7 +4820,7 @@ end _BehaviorCard
 Summary: Returns the card or stack (if no card ref is present) reference of the behavior associated with a control.
 
 Parameters:
-pControl A reference to a control.
+pControl: A reference to a control.
 
 Returns: A reference to the card or stack of the behavior.
 */
@@ -4743,7 +4849,7 @@ end CardOfControlBehavior
 Summary: Returns the stack reference of a control.
 
 Parameters:
-pControl A reference to a control.
+pControl: A reference to a control.
 
 Returns: A reference to the control stack.
 */
@@ -4767,14 +4873,15 @@ end _StackOf
 --> Field Editing
 
 /**
-Summary: When "true" is passed in then any open field editors will NOT be closed when they normally would. Pass in "false" to turn normal behavior back on.
+Summary: When "true" is passed in then any open field editors will NOT be closed when they normally would.
 
 Parameters:
-pStackRef A reference to the stack that is being suspended.
-pBoolean: "true" suspends normal field editor closing behavior. "false" restores normal behavior.
-*
-* Use when a stack is suspended so that a field editor stays open.
-* Note that this message is processed in the actual behavior button rather than in an instance of the data grid.
+pStackRef: A reference to the stack that is being suspended.
+pBoolean: `true` suspends normal field editor closing behavior. `false` restores normal behavior.
+
+Description:
+Use when a stack is suspended so that a field editor stays open.
+Note that this message is processed in the actual behavior button rather than in an instance of the data grid.
 
 Returns: empty
 */
@@ -4804,9 +4911,10 @@ end SuspendFieldEditorClosing
 
 /**
 Summary: Returns whether or not a stack is suspended
-*
-* Only call on the behavior button, not an instance of the data view. Otherwise the script local
-* won't have the proper value.
+
+Description:
+Only call on the behavior button, not an instance of the data view. Otherwise the script local
+won't have the proper value.
 
 Returns: Boolean
 */
@@ -4820,7 +4928,7 @@ end uStackIsSuspended
 Summary: Returns whether or not a field editor should close. Called from an instance of the data view.
 
 Parameters:
-pClosingTriggeredBy The event triggering the close. If exitField or closeField then stack check is performed.
+pClosingTriggeredBy: The event triggering the close. If exitField or closeField then stack check is performed.
 
 Returns: Boolean
 */
@@ -4845,13 +4953,14 @@ end _ShouldFieldEditorClose
 
 /**
 Summary: Scrolls the row into view and dispatches the EditKey message to it.
-*
-* It is up to the control to implement the EditKey handler. Normally it will call EditFieldText for
-* the field that edits the targeted key.
 
 Parameters:
-pKey The key to edit.
+pKey: The key to edit.
 pRow: The row to edit.
+
+Description:
+It is up to the control to implement the EditKey handler. Normally it will call `EditFieldText` for
+the field that edits the targeted key.
 
 Returns: Error message
 */
@@ -4877,7 +4986,7 @@ end EditKeyOfRow
 Summary: Opens an editing field for the target field. This allows the user to edit the value for a key.
 
 Parameters:
-pField A reference to the field that will be edited. The editor will appear over the top of this field.
+pField: A reference to the field that will be edited. The editor will appear over the top of this field.
 pKey: The key that the field is associated with.
 
 Returns: empty
@@ -5103,10 +5212,11 @@ end _PopulateFieldEditor
 Summary: Closes the field editor, optionally saving contents.
 
 Parameters:
-pSaveContents Boolean value specifying whether or not to send messages to save changes.
+pSaveContents: Boolean value specifying whether or not to send messages to save changes.
 pClosingTriggeredBy: The system message that triggered the closing.
-*
-* This is called from the field editor behaviors.
+
+Description:
+This is called from the field editor behaviors.
 
 Returns: empty
 */
@@ -5127,9 +5237,10 @@ end _CloseFieldEditor
 Summary: Removes focus from the editor and sends messages to open the next field editor.
 
 Parameters:
-pClosingTriggeredBy The system message that triggered the closing.
-*
-* This is called from the field editor behaviors.
+pClosingTriggeredBy: The system message that triggered the closing.
+
+Description:
+This is called from the field editor behaviors.
 
 Returns: empty
 */
@@ -5145,10 +5256,11 @@ end _CloseFieldEditorAndOpenNext
 Summary: A helper function that determines if a field editor is open for a field of a particular name.
 
 Parameters:
-pRowObject The row object that is asking the question.
+pRowObject: The row object that is asking the question.
 pFieldName: Name of field that might have a field editor open for it.
-*
-* This can be called from a row template.
+
+Description:
+This can be called from a row template.
 
 Returns: Boolean
 */
@@ -5168,11 +5280,12 @@ end FieldEditorIsOpen
 
 /**
 Summary: Deletes the field editor, optionally sending messages to save changes made in editor.
-*
-Summary: pSaveContents Set to true to dispatch message signaling that editor content should be saved.
+
+Parameters:
+pSaveContents: Set to true to dispatch message signaling that editor content should be saved.
 pClosingTriggeredBy: The system message that triggered the closing.
 
-Returns: Empty or "cancel"
+Returns: Empty or `cancel`
 */
 command DeleteFieldEditor pSaveContents, pClosingTriggeredBy
   local theFocusedObject, msgsAreLocked, contentHasChanged
@@ -5291,15 +5404,19 @@ end _DeleteFieldEditor
 Summary: Deletes the field editor and sends message to view telling it to open next editing field.
 
 Parameters:
-pClosingTriggeredBy The system message that triggered the closing.
+pClosingTriggeredBy: The system message that triggered the closing.
 pDirection: Pass in a value to force "next" or "previous".
-*
-*  The field editor will be closed with changes saved. The "OpenNextFieldEditor" message will then be
-* sent to view so the developer can open another field for editing.
-* Optionally sending messages to save changes made in editor. OpenNextFieldEditor has three parameters:
-*     pRow: the row that was just edited.
-*     pKey: the key that was just edited.
-*     pDirection:either "next" or "previous".
+
+Description:
+The field editor will be closed with changes saved. The `OpenNextFieldEditor` message will then be
+sent to view so the developer can open another field for editing.
+Optionally sending messages to save changes made in editor. `OpenNextFieldEditor` has three parameters:
+
+| Name | Description |
+|:---- |:----------- |
+| `pRow` | The row that was just edited. |
+| `pKey` | The key that was just edited. |
+| `pDirection` | `next` or `previous` |
 
 Returns: Empty or "cancel"
 */
@@ -5358,7 +5475,7 @@ end DeleteFieldEditorAndOpenNext
 Summary: Adds a "..." to the end of field text if the text of the field is too long.
 
 Parameters:
-pFieldID The id of the field to add the trailer to.
+pFieldID: The id of the field to add the trailer to.
 pTrailer: The trailer text. The default is "..." if empty.
 
 Returns: Boolean. True if text was trailed off. False otherwise.
@@ -5469,7 +5586,7 @@ local sDeleteAnimationLayer = "false"
 Summary: Reveals rows by animating them.
 
 Parameters:
-pRows
+pRows:
 pShowOrHide:
 *
 */
