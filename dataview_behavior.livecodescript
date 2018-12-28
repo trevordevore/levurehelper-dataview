@@ -2265,7 +2265,7 @@ private command _RenderView pRefreshDataInCachedControls
 
   if sViewPropsA["running actions"]["resend render"] then
     get sViewPropsA["running actions"]["resend render param"]
-    send "RunRenderViewAgain it" to me in 0 milliseconds
+    send "_RunRenderViewAgain it" to me in 0 milliseconds
     put false into sViewPropsA["running actions"]["resend render"]
     put empty into sViewPropsA["running actions"]["resend render param"]
   end if
@@ -2274,9 +2274,9 @@ private command _RenderView pRefreshDataInCachedControls
 end _RenderView
 
 
-command RunRenderViewAgain pRefreshDataInCachedControls
+command _RunRenderViewAgain pRefreshDataInCachedControls
   _RenderView pRefreshDataInCachedControls
-end RunRenderViewAgain
+end _RunRenderViewAgain
 
 
 /**
