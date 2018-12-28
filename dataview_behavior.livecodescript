@@ -23,6 +23,7 @@ local sSystemA -- stores system specific settings
 local sScrollerID
 local sPendingMsgsA
 local sFieldEditor ## place holder until I decide what to do with editing.
+local sNumRowsTempCache ## Caches row count during single event
 
 
 /**
@@ -1998,10 +1999,16 @@ getProp viewProp [pProp]
     case "number of rows"
       ## Can we cache this so we don't make so many calls?
       ## Cache when rendering view. Update if row added or deleted.
-      local theValue
-      dispatch function "NumberOfRows"
-      if it is "handled" then put the result into theValue
-      put max(0,theValue) into theValue
+      local tValue
+      put sNumRowsTempCache into tValue
+      if tValue is empty then
+        dispatch function "NumberOfRows"
+        if it is "handled" then
+          put the result into tValue
+        end if
+      end if
+      put max(0,tValue) into tValue
+      return tValue
       break
 
     case "opaque"
@@ -2201,6 +2208,8 @@ private command _RenderView pRefreshDataInCachedControls
   --      set the viewProp["cache"] of me to "lazy"
   --   end if
 
+  put the viewProp["number of rows"] of me into sNumRowsTempCache
+
   ## Cache controls based on settings
   if the viewProp["cache"] of me is among the items of "eager,lazy" then
     _UpdateControlCacheForActiveRange 0, 0 # This cleans up the current rows in use
@@ -2259,6 +2268,8 @@ private command _RenderView pRefreshDataInCachedControls
   dispatch "DataViewDidUpdateView" to me
 
   unlock screen
+
+  put empty into sNumRowsTempCache
 
   set the lockMessages to msgsAreLocked
 
