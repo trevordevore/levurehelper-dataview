@@ -202,3 +202,8 @@ If your DataView has rows that should not be selectable by the user then return 
 getProp dvCanSelect
   return false
 end dvCanSelect
+```
+
+## How caching works
+
+`lazy`, `eager`, `none`
