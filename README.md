@@ -13,14 +13,14 @@ Need to create an IDE helper for creating a DataView. It should also create a de
 
 ## Assigning data to a DataView
 
-To test that a new DataView is working you can create a simple numerically indexed array and assign it to it's `uData` property. The default row template displays a "title" key in a field so a simple test would look like this:
+To test that a new DataView is working you can create a simple numerically indexed array and assign it to it's `dvData` property. The default row template displays a "title" key in a field so a simple test would look like this:
 
 ```
 put "Row 1" into tDataA[1]["title"]
 put "Row 2" into tDataA[2]["title"]
 put "Row 3" into tDataA[3]["title"]
 
-set the uData of group "MyDataView" to tDataA
+set the dvData of group "MyDataView" to tDataA
 ```
 
 ## Customizing row templates
