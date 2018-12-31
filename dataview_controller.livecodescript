@@ -2,9 +2,22 @@ script "DataView Controller" with behavior "DataView Group Behavior"
 local sDataA
 
 
-setProp uData pDataArrayA
-  put pDataArrayA into sDataA
-end uData
+/**
+Summary: Set the array to feed to the DataView.
+
+Parameters:
+pDataA: A numerically indexed array of arrays.
+
+Example:
+put "Jane Doe" into tPeopleA[1]["name"]
+put "Jone Doe" into tPeopleA[2]["name"]
+set the dvArray of group "MyDataView" to tPeopleA
+
+Returns: nothing
+*/
+setProp dvData pDataA
+  put pDataA into sDataA
+end dvData
 
 
 command DataForRow pRow, @rDataA, @rTemplateStyle
@@ -33,7 +46,16 @@ on backspaceKey
 end backspaceKey
 
 
-getProp uSelectedId
+/**
+Summary: Returns the `id` property of the selected row.
+
+Description:
+This property only returns a value if the array created in `DataForRow`
+has an `id` key.
+
+Returns: Value
+*/
+getProp dvSelectedId
   local tRow
 
   put the dvHilitedRow of me into tRow
@@ -43,10 +65,19 @@ getProp uSelectedId
   else
     return empty
   end if
-end uSelectedId
+end dvSelectedId
 
 
-setProp uSelectedId pId
+/**
+Summary: Sets the selected row based on the `id` property of a row.
+
+Description:
+This property can only be set if the array created in `DataForRow`
+has an `id` key.
+
+Returns: empty
+*/
+setProp dvSelectedId pId
   local tRow
 
   put _RowOfId(pId) into tRow
@@ -56,20 +87,52 @@ setProp uSelectedId pId
   end if
 
   return empty
-end uSelectedId
+end dvSelectedId
 
 
-getProp uRowRecord[pRow]
+/**
+Summary: Returns the row data associated with `pRow`.
+
+Parameters:
+pRow: The target row.
+
+Returns: Value
+*/
+getProp dvRowData[pRow]
   return sDataA[pRow]
-end uRowRecord
+end dvRowData
 
 
-getProp uRowId[pRow]
+/**
+Summary: Returns the row id associated with `pRow`.
+
+Parameters:
+pRow: The target row.
+
+Description:
+This property can only be set if the array created in `DataForRow`
+has an `id` key.
+
+Returns: nothing
+*/
+getProp dvRowId[pRow]
   return sDataA[pRow]["id"]
-end uRowId
+end dvRowId
 
 
-getProp uRowOfIdRecord[pId]
+/**
+Summary: Returns the row data associated with a specific `id`.
+
+Parameters:
+pId: The target `id`.
+
+Description:
+This property can only be set if the array created in `DataForRow`
+has an `id` key.
+
+Returns: Value
+*/
+getProp dvRowOfIdData[pId]
   local tRow
 
   put _RowOfId(pId) into tRow
@@ -79,20 +142,66 @@ getProp uRowOfIdRecord[pId]
   else
     return empty
   end if
-end uRowOfIdRecord
+end dvRowOfIdData
 
 
-setProp uRowOfIdRecord[pId] pRecordA
+/**
+Summary: Sets the row data associated with a specific `id.
+
+Parameters:
+pId: The target id.
+pDataA: The array to associated with the row.
+
+Description:
+Use this property to update row data without needing to update the entire array.
+
+To update the UI call `RefreshRowOfId`.
+
+Returns: nothing
+*/
+setProp dvRowOfIdData[pId] pDataA
   local tRow
 
   put _RowOfId(pId) into tRow
 
   if tRow > 0 then
-    put pRecordA into sDataA[tRow]
+    put pDataA into sDataA[tRow]
   end if
-end uRowOfIdRecord
+
+  return empty
+end dvRowOfIdData
 
 
+/**
+Summary: Returns the data array of the currently selected row.
+
+Returns: Value
+*/
+getProp dvSelectedData
+  local tRow
+
+  put the dvHilitedRow of me into tRow
+
+  if tRow > 0 then
+    return sDataA[tRow]
+  else
+    return empty
+  end if
+end dvSelectedData
+
+
+/**
+Summary: Redraws the row associated with the specified `id`.
+
+Parameters:
+pId: The target id.
+
+Description:
+Call this command after updating data in the DataView affects what is
+displayed in the row.
+
+Returns: nothing
+*/
 command RefreshRowOfId pId
   local tRow
 
@@ -104,19 +213,6 @@ command RefreshRowOfId pId
 
   return empty
 end RefreshRowOfId
-
-
-getProp uSelectedRecord
-  local tRow
-
-  put the dvHilitedRow of me into tRow
-
-  if tRow > 0 then
-    return sDataA[tRow]
-  else
-    return empty
-  end if
-end uSelectedRecord
 
 
 private function _RowOfId pId
