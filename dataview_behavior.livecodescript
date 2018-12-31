@@ -202,7 +202,7 @@ appropriate value is used.
 
 Returns: empty
 */
-command _SetScrollbarWidth pWidth
+private command _SetScrollbarWidth pWidth
   lock screen
   if pWidth is not an integer then
     if the viewProp["scrollbar width"] of me is an integer then
@@ -3655,7 +3655,7 @@ Summary: Returns the working top/bottom that will show content. Padding has been
 
 Returns: top x, bottom x
 */
-function _WorkingTopAndBottomContentCoordinates
+private function _WorkingTopAndBottomContentCoordinates
   local theWindowHeight, theTopPadding, theBottomPadding
 
   put _GetContentWindowHeight() into theWindowHeight
