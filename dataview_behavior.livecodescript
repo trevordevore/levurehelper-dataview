@@ -2406,7 +2406,8 @@ Description:
 The purpose of this handler is to ensure that the proper data is mapped to the proper row
 in the view. It can be called after reordering rows, deleting rows, adding rows, etc.
 
-If caching is on then the cache keys for each row will be updated, clearing controls as necessary, and any new controls will be initialized/displayed.
+If caching is on then the cache keys for each row will be updated, clearing controls as
+necessary, and any new controls will be initialized/displayed.
 
 If caching is off then the normal draw routines are called.
 
