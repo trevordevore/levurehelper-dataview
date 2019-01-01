@@ -2078,8 +2078,11 @@ getProp viewProp [pProp]
       break
 
     case "content width"
-      return the width of group "dvListMask" of me
+      return the width of group "dvList" of me
       break
+
+    case "content window width"
+      return the width of group "dvListMask" of me
 
     case "content window height"
       return _GetContentWindowHeight()
@@ -2186,6 +2189,20 @@ setProp viewProp [pProp] pValue
       break
     case "hscroll"
 
+      break
+    case "content width"
+      if pValue is empty then
+        put the width of group "dvListMask" of me into pValue
+      end if
+      lock screen
+      local tRect
+      put the rect of group "dvList" of me into tRect
+      put item 1 of tRect + pValue into item 3 of tRect
+      set the rect of group "dvList" of me to tRect
+      set the hscrollbar of group "dvListMask" of me to the width of group "dvList" of me > the width of group "dvListMask" of me
+      if not the hscrollbar of group "dvListMask" of me then set the hscroll of group "dvListMask" of me to 0
+      _ResizeRowControlsAsNeeded
+      unlock screen
       break
     case "drop indicator template"
       if pValue is not empty then
