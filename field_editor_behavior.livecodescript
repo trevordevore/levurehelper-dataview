@@ -99,7 +99,7 @@ command ResizeToFitContent
   local theRow
 
   if there is not a (the long id of me) then exit ResizeToFitContent ## in case underlying control is deleted
-  CancelMessage "ResizeToFitContent" ## throttle
+  _cancelMessage "ResizeToFitContent" ## throttle
 
   lock screen
 
@@ -145,3 +145,16 @@ function _getSelectedChunk
 
   return tSelChunk
 end _getSelectedChunk
+
+
+command _cancelMessage pMsg
+  local tMessage, tMessages
+
+  repeat until (comma & pMsg & comma) is not in the pendingMessages
+    put the pendingMessages into tMessages
+    filter tMessages with "*," & pMsg & ",*"
+    repeat for each line tMessage in tMessages
+      cancel item 1 of tMessage
+    end repeat
+  end repeat
+end _cancelMessage

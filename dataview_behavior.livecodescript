@@ -1114,12 +1114,12 @@ private command _ScrollRow pRow, pPlacement, pForceScroll
 
         if the viewProp["animate selections"] of me and sPendingMsgsA["UpdateScrollAnimation"] is empty then
           unlock screen
-          StartScrollAnimation theNewVScroll
+          _startScrollAnimation theNewVScroll
           exit repeat
         else
           local msgsAreLocked
 
-          CancelAnimation
+          _cancelAnimation
           put the lockMessages into msgsAreLocked
           lock messages
           set the thumbPosition of scrollbar "dvVScrollbar" of me to theNewVScroll
@@ -1226,11 +1226,11 @@ command ScrollRectIntoView pRect, pPadding
 
   if theVScroll is not empty then
     if the viewProp["animate selections"] of me then
-      StartScrollAnimation theVScroll
+      _startScrollAnimation theVScroll
     else
       local msgsAreLocked
 
-      CancelAnimation
+      _cancelAnimation
       put the lockMessages into msgsAreLocked
       lock messages
       set the thumbPosition of scrollbar "dvVScrollbar" of me to theVScroll
@@ -4151,8 +4151,8 @@ end _CustomControlReference
 constant kFrameLength = 10
 constant kAnimationLength = 300
 
-command StartScrollAnimation pScrollTo
-  CancelAnimation
+private command _startScrollAnimation pScrollTo
+  _cancelAnimation
 
   local rightNow, scrollFrom
 
@@ -4160,18 +4160,18 @@ command StartScrollAnimation pScrollTo
   put the milliseconds into rightNow
   put round(the thumbPosition of scrollbar "dvVScrollbar" of me) into scrollFrom
 
-  ScheduleScrollAnimation scrollFrom, pScrollTo, rightNow, "ease in out", rightNow, rightNow + kAnimationLength
-end StartScrollAnimation
+  _scheduleScrollAnimation scrollFrom, pScrollTo, rightNow, "ease in out", rightNow, rightNow + kAnimationLength
+end _startScrollAnimation
 
 
-command CancelAnimation
+private command _cancelAnimation
   put false into sViewPropsA["is animating"]
   cancel sPendingMsgsA["UpdateScrollAnimation"]
   put empty into sPendingMsgsA["UpdateScrollAnimation"]
-end CancelAnimation
+end _cancelAnimation
 
 
-command ScheduleScrollAnimation pScrollFrom, pScrollTo, pLastTime, pPhase, pPhaseStart, pPhaseEnd
+private command _scheduleScrollAnimation pScrollFrom, pScrollTo, pLastTime, pPhase, pPhaseStart, pPhaseEnd
   if not sViewPropsA["is animating"] then return empty
 
   local rightNow, theNextTime
@@ -4180,12 +4180,12 @@ command ScheduleScrollAnimation pScrollFrom, pScrollTo, pLastTime, pPhase, pPhas
   ## Synchronize to the system clock.
   put (rightNow - (rightNow mod kFrameLength)) + kFrameLength into theNextTime
 
-  send "UpdateScrollAnimation pScrollFrom, pScrollTo, pLastTime, pPhase, pPhaseStart, pPhaseEnd" to me in theNextTime - rightNow milliseconds
+  send "_updateScrollAnimation pScrollFrom, pScrollTo, pLastTime, pPhase, pPhaseStart, pPhaseEnd" to me in theNextTime - rightNow milliseconds
   put the result into sPendingMsgsA["UpdateScrollAnimation"]
-end ScheduleScrollAnimation
+end _scheduleScrollAnimation
 
 
-command UpdateScrollAnimation pScrollFrom, pScrollTo, pLastTime, pPhase, pPhaseStart, pPhaseEnd
+command _updateScrollAnimation pScrollFrom, pScrollTo, pLastTime, pPhase, pPhaseStart, pPhaseEnd
   put empty into sPendingMsgsA["UpdateScrollAnimation"]
   if not sViewPropsA["is animating"] then return empty
 
@@ -4230,20 +4230,20 @@ command UpdateScrollAnimation pScrollFrom, pScrollTo, pLastTime, pPhase, pPhaseS
   ## Schedule next animation
   if pScrollFrom > pScrollTo then
     if theValue > pScrollTo then
-      ScheduleScrollAnimation pScrollFrom, pScrollTo, rightNow, pPhase, pPhaseStart, pPhaseEnd
+      _scheduleScrollAnimation pScrollFrom, pScrollTo, rightNow, pPhase, pPhaseStart, pPhaseEnd
     else
       put false into sViewPropsA["is animating"]
     end if
   else
     if theValue < pScrollTo then
-      ScheduleScrollAnimation pScrollFrom, pScrollTo, rightNow, pPhase, pPhaseStart, pPhaseEnd
+      _scheduleScrollAnimation pScrollFrom, pScrollTo, rightNow, pPhase, pPhaseStart, pPhaseEnd
     else
       put false into sViewPropsA["is animating"]
     end if
   end if
 
   return empty
-end UpdateScrollAnimation
+end _updateScrollAnimation
 
 
 --> Drag and Drop
@@ -5738,16 +5738,3 @@ private function _WorkingGroupRect pGroup
   end if
   return theRect
 end _WorkingGroupRect
-
-
-private command _CancelMessage pMsg
-  local theMessage,theMessages
-
-  repeat until (comma & pMsg & comma) is not in the pendingMessages
-    put the pendingMessages into theMessages
-    filter theMessages with "*," & pMsg & ",*"
-    repeat for each line theMessage in theMessages
-      cancel item 1 of theMessage
-    end REPEAT
-  end repeat
-end _CancelMessage
