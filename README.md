@@ -219,3 +219,7 @@ Possible values for pEventThatTriggeredClose are `close control`,
 
 `close control` is sent when the user scrolls the row that is being edited out of view
 and caching is not turned on.
+
+## The `animate selections` property
+
+The DataView can animate selections of rows that are not currently in view. You need to set the `viewProp["animate selections"]` property to true and have the [animationEngine](https://github.com/derbrill/animationEngine) library in use.
