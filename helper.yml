@@ -1,6 +1,6 @@
 behaviors:
   - filename: dataview_behavior.livecodescript
-  - filename: default_behavior.livecodescript
+  - filename: array_controller_behavior.livecodescript
   - filename: scrollbar_behavior.livecodescript
   - filename: track_drag_drop_behavior.livecodescript
   - filename: field_editor_behavior.livecodescript

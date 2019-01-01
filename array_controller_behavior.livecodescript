@@ -1,4 +1,4 @@
-script "DataView Default Behavior" with behavior "DataView Behavior"
+script "DataView Array Controller Behavior" with behavior "DataView Behavior"
 local sDataA
 
 
