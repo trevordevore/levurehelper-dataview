@@ -1,5 +1,5 @@
 script "DataView Field Editor Frontscript"
-constant kBehaviorStackName = "DataView Group Behavior"
+constant kBehaviorStackName = "DataView Behavior"
 
 /**
 * \brief suspendStack occurs before exitField/closefield. Use it to tell editor not to close down.

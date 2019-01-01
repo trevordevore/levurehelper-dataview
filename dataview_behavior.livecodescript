@@ -1,4 +1,4 @@
-script "DataView Group Behavior"
+script "DataView Behavior"
 local sLastTargetedRow
 
 constant kLockUpdatesSetting = "true" # use for testing whether or not lockupdates makes a difference.
