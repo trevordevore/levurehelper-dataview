@@ -207,3 +207,15 @@ end dvCanSelect
 ## How caching works
 
 `lazy`, `eager`, `none`
+
+## Opening a field editor in a DataView
+
+1. Dispatch `EditKeyOfRow` to the DataView
+2. DataView dispatches `EditKey` to the row control.
+3. Call `CreateFieldEditorForField` and pass in the field to edit in the row contorl.
+
+Possible values for pEventThatTriggeredClose are `close control`,
+`closeField`, `exitField`, `returnInField`, `enterInField`, and `tabKey`.
+
+`close control` is sent when the user scrolls the row that is being edited out of view
+and caching is not turned on.
