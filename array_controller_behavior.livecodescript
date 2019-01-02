@@ -191,6 +191,36 @@ end dvSelectedData
 
 
 /**
+Summary: Returns a specific key in a row's array.
+
+Parameters:
+pRow: The target row.
+pKey: The custom key.
+
+Returns: Mixed
+*/
+function GetValueForKeyInRow pRow, pKey
+  return sDataA[pRow][pKey]
+end GetValueForKeyInRow
+
+
+/**
+Summary: Sets the value of a key for a row's array.
+
+Parameters:
+pRow: The target row.
+pKey: The custom key.
+pValue: The value to assign to the key.
+
+Returns: nothing
+*/
+command SetValueForKeyInRow pRow, pKey, pValue
+  put pValue into sDataA[pRow][pKey]
+  return empty
+end SetValueForKeyInRow
+
+
+/**
 Summary: Redraws the row associated with the specified `id`.
 
 Parameters:
