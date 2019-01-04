@@ -7,6 +7,12 @@ Platoforms: Tested on Windows, macOS, and iOS.
 
 A DataView is responsible for taking row data that your code provides and rendering it in a highly customizable way using row templates. Row data is an array of key=>value pairs. Out of the box you can assign a numerically indexed array of arrays with key=>value pairs to a DataView (see example below). But you can customize the data source any way you would like. 
 
+## Demo
+
+The DataView Demo application includes an example of using this helper:
+
+https://github.com/trevordevore/dataview_demo
+
 ## Creating a DataView
 
 Need to create an IDE helper for creating a DataView. It should also create a default row template.
