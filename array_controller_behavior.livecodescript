@@ -47,7 +47,7 @@ end backspaceKey
 
 
 /**
-Summary: Returns the `id` property of the selected row.
+Summary: Returns the `id` property of the selected row(s).
 
 Description:
 This property only returns a value if the array created in `DataForRow`
@@ -55,17 +55,26 @@ has an `id` key.
 
 Returns: Value
 */
-getProp dvSelectedId
-  local tRow
+getProp dvHilitedIds
+  local tRow, tRows, tIds
 
-  put the dvHilitedRow of me into tRow
+  put the dvHilitedRow of me into tRows
 
-  if tRow > 0 then
-    return sDataA[tRow]["id"]
+  if tRows is not empty then
+    repeat for each item tRow in tRows
+      put sDataA[tRow]["id"] & "," after tIds
+    end repeat
+    delete the last char of tIds
+    return tIds
   else
     return empty
   end if
-end dvSelectedId
+end dvHilitedIds
+
+
+getProp dvHilitedId
+  return the dvHilitedIds of me
+end dvHilitedId
 
 
 /**
@@ -77,17 +86,48 @@ has an `id` key.
 
 Returns: empty
 */
-setProp dvSelectedId pId
-  local tRow
-
-  put _RowOfId(pId) into tRow
-
-  if tRow > 0 then
-    set the dvHilitedRow of me to tRow
-  end if
-
+setProp dvHilitedIds pIds
+  _setHilitedIds pIds
   return empty
-end dvSelectedId
+end dvHilitedIds
+
+
+setProp dvHilitedId pId
+  _setHilitedIds pId
+  return empty
+end dvHilitedId
+
+
+/**
+Summary: Returns the data array of the currently selected row(s).
+
+Description:
+If the DataView allows multiple selections, and multiple rows
+are selected, then the result will be a numerically indexed array
+of row data.
+
+Returns: Value
+*/
+getProp dvHilitedData
+  local tRow, tRows, tIds
+
+  put the dvHilitedRow of me into tRows
+
+  if tRows is not empty then
+    if the number of items of tRows is 1 then
+      return sDataA[tRows]
+    else
+      local tDataA, i
+      repeat for each item tRow in tRows
+        add 1 to i
+        put sDataA[tRow] into tDataA[i]
+      end repeat
+      return tDataA
+    end if
+  else
+    return empty
+  end if
+end dvHilitedData
 
 
 /**
@@ -173,24 +213,6 @@ end dvRowOfIdData
 
 
 /**
-Summary: Returns the data array of the currently selected row.
-
-Returns: Value
-*/
-getProp dvSelectedData
-  local tRow
-
-  put the dvHilitedRow of me into tRow
-
-  if tRow > 0 then
-    return sDataA[tRow]
-  else
-    return empty
-  end if
-end dvSelectedData
-
-
-/**
 Summary: Returns a specific key in a row's array.
 
 Parameters:
@@ -243,6 +265,25 @@ command RefreshRowOfId pId
 
   return empty
 end RefreshRowOfId
+
+
+private command _setHilitedIds pIds
+  local tId, tRow, tRows
+
+  repeat for each item tId in pIds
+    put _RowOfId(tId) & "," into tRow
+    if tRow is not empty then
+      put tRow & "," after tRows
+    end if
+  end repeat
+  delete the last char of tRows
+
+  if tRows is not empty then
+    set the dvHilitedRow of me to tRows
+  end if
+
+  return empty
+end _setHilitedIds
 
 
 private function _RowOfId pId
