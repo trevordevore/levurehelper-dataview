@@ -3,7 +3,8 @@
 A DataView displays rows of data. It is similar to a DataGrid form, a control available in the LiveCode IDE. 
 
 LiveCode Version: 8.x or higher
-Platoforms: Tested on Windows, macOS, and iOS.
+
+Platforms: Tested on Windows, macOS, and iOS.
 
 A DataView is responsible for taking row data that your code provides and rendering it in a highly customizable way using row templates. Row data is an array of key=>value pairs. Out of the box you can assign a numerically indexed array of arrays with key=>value pairs to a DataView (see example below). But you can customize the data source any way you would like. 
 
@@ -57,7 +58,7 @@ put the long id of group "ParagraphTemplate" of stack "MyRowTemplateStack" \
 set the viewProp["row style templates"] of group "MoreComplexView" to tStyleTemplatesA
 ```
 
-After running the above code you could assign either the `headng` or `paragraph` style to each row in the "MoreComplexView" DataView and the appropriate row template group would be used.
+After running the above code you could assign either the `heading` or `paragraph` style to each row in the "MoreComplexView" DataView and the appropriate row template group would be used.
 
 ### Where do I store row template groups?
 
@@ -170,7 +171,7 @@ end NumberOfRows
 
 The `CacheKeyForRow()` function must return a unique identifier for each row. If you don't define the `CacheKeyForRow()` function in the message path then the DataView will use the row number to uniquely identify each row. If your DataView is displaying a flat list of data that cannot be reordered and that never toggles the visibility of rows then there is nothing further that needs to be done. 
 
-If, however, the row that data in your data source is associated with can change inbetween calls to `ResetView` then you must handle `CacheKeyForRow()` and return a unique identifier for the row. For example, the primary key column from a database table will be adequate in most cases. If your DataView is displaying records from multiple tables then the primary key might not be sufficient as the primary keys from two different tables aren't necessarily unique.
+If, however, the row that data in your data source is associated with can change between calls to `ResetView` then you must handle `CacheKeyForRow()` and return a unique identifier for the row. For example, the primary key column from a database table will be adequate in most cases. If your DataView is displaying records from multiple tables then the primary key might not be sufficient as the primary keys from two different tables aren't necessarily unique.
 
 ```
 CacheKeyForRow pRow
@@ -200,7 +201,7 @@ function CacheKeyForRow pRow
 end CacheKeyForRow
 ```
 
-## Specifing whether or not a row is selectable
+## Specifying whether or not a row is selectable
 
 If your DataView has rows that should not be selectable by the user then return false for the `dvCanSelect` property of the row template. The following script can be added to a row template behavior:
 
@@ -218,7 +219,7 @@ end dvCanSelect
 
 1. Dispatch `EditKeyOfRow` to the DataView
 2. DataView dispatches `EditKey` to the row control.
-3. Call `CreateFieldEditorForField` and pass in the field to edit in the row contorl.
+3. Call `CreateFieldEditorForField` and pass in the field to edit in the row control.
 
 Possible values for pEventThatTriggeredClose are `close control`,
 `closeField`, `exitField`, `returnInField`, `enterInField`, and `tabKey`.
