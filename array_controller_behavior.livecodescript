@@ -1,5 +1,6 @@
 script "DataView Array Controller Behavior" with behavior "DataView Behavior"
 local sDataA
+local sIdToRowLookupA # cache created when _rowOfId() is called
 
 
 /**
@@ -17,6 +18,7 @@ Returns: nothing
 */
 setProp dvData pDataA
   put pDataA into sDataA
+  put empty into sIdToRowLookupA
 end dvData
 
 
@@ -55,10 +57,9 @@ getProp dvHilitedIds
       put sDataA[tRow]["id"] & "," after tIds
     end repeat
     delete the last char of tIds
-    return tIds
-  else
-    return empty
   end if
+
+  return tIds
 end dvHilitedIds
 
 
@@ -78,13 +79,11 @@ Returns: empty
 */
 setProp dvHilitedIds pIds
   _setHilitedIds pIds
-  return empty
 end dvHilitedIds
 
 
 setProp dvHilitedId pId
   _setHilitedIds pId
-  return empty
 end dvHilitedId
 
 
@@ -92,30 +91,26 @@ end dvHilitedId
 Summary: Returns the data array of the currently selected row(s).
 
 Description:
-If the DataView allows multiple selections, and multiple rows
-are selected, then the result will be a numerically indexed array
-of row data.
+If a single row is selected then the array associated with that row
+will be returned. If multiple rows are selected, then the result will
+be a numerically indexed array of row data.
 
-Returns: Value
+Returns: Array
 */
 getProp dvHilitedData
   local tRow, tRows, tIds
 
   put the dvHilitedRow of me into tRows
 
-  if tRows is not empty then
-    if the number of items of tRows is 1 then
-      return sDataA[tRows]
-    else
-      local tDataA, i
-      repeat for each item tRow in tRows
-        add 1 to i
-        put sDataA[tRow] into tDataA[i]
-      end repeat
-      return tDataA
-    end if
+  if the number of items of tRows is 1 then
+    return sDataA[tRows]
   else
-    return empty
+    local tDataA, i
+    repeat for each item tRow in tRows
+      add 1 to i
+      put sDataA[tRow] into tDataA[i]
+    end repeat
+    return tDataA
   end if
 end dvHilitedData
 
@@ -181,7 +176,7 @@ Returns: Value
 getProp dvRowOfIdData[pId]
   local tRow
 
-  put _RowOfId(pId) into tRow
+  put _rowOfId(pId) into tRow
 
   if tRow > 0 then
     return sDataA[tRow]
@@ -208,7 +203,7 @@ Returns: nothing
 setProp dvRowOfIdData[pId] pDataA
   local tRow
 
-  put _RowOfId(pId) into tRow
+  put _rowOfId(pId) into tRow
 
   if tRow > 0 then
     put pDataA into sDataA[tRow]
@@ -263,7 +258,7 @@ Returns: nothing
 command RefreshRowOfId pId
   local tRow
 
-  put _RowOfId(pId) into tRow
+  put _rowOfId(pId) into tRow
 
   if tRow > 0 then
     RenderRows tRow
@@ -277,29 +272,27 @@ private command _setHilitedIds pIds
   local tId, tRow, tRows
 
   repeat for each item tId in pIds
-    put _RowOfId(tId) & "," into tRow
-    if tRow is not empty then
+    put _rowOfId(tId) into tRow
+    if tRow > 0 then
       put tRow & "," after tRows
     end if
   end repeat
   delete the last char of tRows
 
-  if tRows is not empty then
-    set the dvHilitedRow of me to tRows
-  end if
+  set the dvHilitedRow of me to tRows
 
   return empty
 end _setHilitedIds
 
 
-private function _RowOfId pId
+private function _rowOfId pId
   local i
 
-  repeat with i = 1 to the number of elements of sDataA
-    if sDataA[i]["id"] is pId then
-      return i
-    end if
-  end repeat
+  if sIdToRowLookupA is not an array then
+    repeat with i = 1 to the number of elements of sDataA
+      put i into sIdToRowLookupA[sDataA[i]["id"]]
+    end repeat
+  end if
 
-  return 0
-end _RowOfId
+  return max(0, sIdToRowLookupA[pId])
+end _rowOfId
