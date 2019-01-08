@@ -71,19 +71,23 @@ end dvHilitedId
 /**
 Summary: Sets the selected row based on the `id` property of a row.
 
+Parameters:
+pForceScroll: Passed along to `dvHilitedRow` in the DataView behavior.
+pIds: The ids to hilite.
+
 Description:
 This property can only be set if the array created in `DataForRow`
 has an `id` key.
 
 Returns: empty
 */
-setProp dvHilitedIds pIds
-  _setHilitedIds pIds
+setProp dvHilitedIds[pForceScroll] pIds
+  _setHilitedIds pIds, pForceScroll
 end dvHilitedIds
 
 
-setProp dvHilitedId pId
-  _setHilitedIds pId
+setProp dvHilitedId[pForceScroll] pId
+  _setHilitedIds pId, pForceScroll
 end dvHilitedId
 
 
@@ -268,7 +272,7 @@ command RefreshRowOfId pId
 end RefreshRowOfId
 
 
-private command _setHilitedIds pIds
+private command _setHilitedIds pIds, pForceScroll
   local tId, tRow, tRows
 
   repeat for each item tId in pIds
@@ -279,7 +283,7 @@ private command _setHilitedIds pIds
   end repeat
   delete the last char of tRows
 
-  set the dvHilitedRow of me to tRows
+  set the dvHilitedRow[pForceScroll] of me to tRows
 
   return empty
 end _setHilitedIds
