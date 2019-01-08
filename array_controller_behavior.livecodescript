@@ -151,6 +151,22 @@ end dvRowId
 
 
 /**
+Summary: Returns the row(s) associated with an id(s).
+
+Parameters:
+pIds: A comma-delimited list of ids.
+
+Description:
+If no row is associated with pId then 0 is returned.
+
+Returns: Integer
+*/
+getProp dvRowOfId[pId]
+  return _rowOfId(pId)
+end dvRowOfId
+
+
+/**
 Summary: Returns the row data associated with a specific `id`.
 
 Parameters:
