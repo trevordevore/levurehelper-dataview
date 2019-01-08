@@ -36,16 +36,6 @@ function CacheKeyForRow pRow
 end CacheKeyForRow
 
 
-on deleteKey
-  dispatch "DeleteSelectedRows" to me
-end deleteKey
-
-
-on backspaceKey
-  dispatch "DeleteSelectedRows" to me
-end backspaceKey
-
-
 /**
 Summary: Returns the `id` property of the selected row(s).
 
