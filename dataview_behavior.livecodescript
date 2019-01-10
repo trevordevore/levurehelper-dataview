@@ -5434,113 +5434,6 @@ command DeleteFieldEditorAndOpenNext pClosingTriggeredBy, pDirection
 end DeleteFieldEditorAndOpenNext
 
 
-/**
-Summary: Adds a "..." to the end of field text if the text of the field is too long.
-
-Parameters:
-pFieldID: The id of the field to add the trailer to.
-pTrailer: The trailer text. The default is "..." if empty.
-
-Returns: Boolean. True if text was trailed off. False otherwise.
-*/
-command TruncateTail pFieldId, pTrailer
-  local msgsAreLocked
-
-  if pTrailer is empty then
-    put "..." into pTrailer
-  end if
-
-  lock screen
-  put the lockMessages into msgsAreLocked
-  lock messages
-
-  local tMaxWidth
-  put the width of field ID pFieldId - the leftMargin of field ID pFieldId into tMaxWidth
-
-  if the formattedWidth of char 1 to -1 of field ID pFieldId <= tMaxWidth then
-    set the lockMessages to msgsAreLocked
-    unlock screen
-    return false
-  end if
-
-  local tCharCount
-  put the number of chars of the text of field ID pFieldId into tCharCount
-
-  local tFieldText
-  put the styledText of field ID pFieldId into tFieldText
-  set the text of field ID pFieldId to pTrailer
-
-  local tTrailerWidth
-  put the formattedWidth of char 1 to -1 of field ID pFieldId into tTrailerWidth
-
-  set the styledText of field ID pFieldId to tFieldText
-
-  -- The 'linear' version requires n steps, where n is the average number of characters
-  -- that will fit into the field up to tMaxWidth. That version will behave well for small
-  -- widths, but will degrade significantly as the width increases.
-
-  -- This version requires log_2(n) steps, where n is the number of characters in the field
-  -- this will be much faster for larger widths, but slower for very small widths when the
-  -- line is very long.
-
-  -- The maximum length of the string we want is tMaxWidth minus the trailer width
-  subtract tTrailerWidth from tMaxWidth
-
-  -- These two vars store the number of characters before the string that is too small (tLow)
-  -- and the number of chars that makes the string too long (tHigh)
-  local tLow, tHigh
-  put 0 into tLow
-  put tCharCount into tHigh
-
-  -- tMid contains the current number of characters we are 'guessing' will fit in tWidth.
-  -- We make a initial estimate based on the width of the trailer. This initial estimate should
-  -- virtually eliminate any advantage the linear algorithm has over the binary search in the
-  -- case of a long line fitting into a small width.
-  local tMid
-  put tMaxWidth div (tTrailerWidth div 2) into tMid
-
-  -- We loop until they are one apart - in which case the char between positions tLow and tHigh
-  -- contains the break width.
-  repeat while tHigh - tLow > 1
-
-    -- Compute the width of tMid characters.
-    local tWidth
-    put (the formattedWidth of char 1 to tMid + 1 of field ID pFieldId) into tWidth
-
-    if tWidth > tMaxWidth then
-      -- If the new width is too much, bring down the high point
-      put tMid into tHigh
-    else if tWidth < tMaxWidth then
-      -- If the new width is too little, bring up the low point
-      put tMid into tLow
-    else
-      -- If we have reached the target width then exit, adjusting by one (we want
-      -- the number of chars that goes from too small, to too much)
-      put tMid into tLow
-      put tMid + 1 into tHigh
-      exit repeat
-    end if
-
-    if tHigh - tLow <= 1 then
-      exit repeat
-    end if
-
-    put tLow + (tHigh - tLow) div 2 into tMid
-  end repeat
-
-  -- At this point tMid will contain the number of chars that causes a transition from too
-  -- short to too long.
-
-  put pTrailer into char tMid to -1 of field ID pFieldId
-  set the textFont of char tMid to -1 of field ID pFieldId to the effective textFont of field ID pFieldId
-
-  set the lockMessages to msgsAreLocked
-  unlock screen
-
-  return true
-end TruncateTail
-
-
 local sControlsBeingAnimated = ""
 local sDeleteAnimationLayer = "false"
 
@@ -5551,7 +5444,10 @@ Summary: Reveals rows by animating them.
 Parameters:
 pRows:
 pShowOrHide:
-*
+
+Description:
+It is unknow how well this code works (if at all). Needs testing.
+
 */
 private command AnimateRows pRows, pShowOrHide
   local theRow, theRowControl
