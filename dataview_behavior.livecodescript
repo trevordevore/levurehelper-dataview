@@ -4754,6 +4754,37 @@ end _createDragImageFromControl
 
 
 /**
+Summary: Returns the rect where you can draw content in a group without making scrollbars appear.
+
+Parameters:
+pGroup A reference to a group control.
+
+Returns: Rect
+*/
+private function _workingGroupRect pGroup
+  local theRect, theWidth
+
+  put the rect of pGroup into theRect
+  add the leftMargin of pGroup to item 1 of theRect
+  add the topMargin of pGroup to item 2 of theRect
+  subtract the rightMargin of pGroup from item 3 of theRect
+  subtract the bottomMargin of pGroup from item 4 of theRect
+  if the environment is not "mobile" then
+    if the hScrollbar of pGroup then subtract the scrollbarWidth of pGroup from item 4 of theRect
+    if the vScrollbar of pGroup then subtract the scrollbarWidth of pGroup from item 3 of theRect
+  end if
+  if the showBorder of pGroup then
+    put the borderWidth of pGroup into theWidth
+    add theWidth to item 1 of theRect
+    add theWidth to item 2 of theRect
+    subtract theWidth from item 3 of theRect
+    subtract theWidth from item 4 of theRect
+  end if
+  return theRect
+end _workingGroupRect
+
+
+/**
 Summary: Returns the card containing this behavior.
 
 Returns: Card reference
@@ -5621,34 +5652,3 @@ command aeExitFrame
     put empty into sControlsBeingAnimated
   end if
 end aeExitFrame
-
-
-/**
-Summary: Returns the rect where you can draw content in a group without making scrollbars appear.
-
-Parameters:
-pGroup A reference to a group control.
-
-Returns: Rect
-*/
-private function _workingGroupRect pGroup
-  local theRect, theWidth
-
-  put the rect of pGroup into theRect
-  add the leftMargin of pGroup to item 1 of theRect
-  add the topMargin of pGroup to item 2 of theRect
-  subtract the rightMargin of pGroup from item 3 of theRect
-  subtract the bottomMargin of pGroup from item 4 of theRect
-  if the environment is not "mobile" then
-    if the hScrollbar of pGroup then subtract the scrollbarWidth of pGroup from item 4 of theRect
-    if the vScrollbar of pGroup then subtract the scrollbarWidth of pGroup from item 3 of theRect
-  end if
-  if the showBorder of pGroup then
-    put the borderWidth of pGroup into theWidth
-    add theWidth to item 1 of theRect
-    add theWidth to item 2 of theRect
-    subtract theWidth from item 3 of theRect
-    subtract theWidth from item 4 of theRect
-  end if
-  return theRect
-end _workingGroupRect
