@@ -1,3 +1,4 @@
+name: DataView
 behaviors:
   - filename: dataview_behavior.livecodescript
   - filename: array_controller_behavior.livecodescript
