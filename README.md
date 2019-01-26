@@ -16,7 +16,28 @@ https://github.com/trevordevore/dataview_demo
 
 ## Creating a DataView
 
-Need to create an IDE helper for creating a DataView. It should also create a default row template.
+The DataView helper includes two commands which can create DataView group controls in the LiveCode IDE:
+
+- `createDataViewControl pName, pTargetCard, pBehavior`
+- `createDataViewControlWithOptions pTargetCard, pBehavior`
+
+`createDataViewControl` will create a DataView with no additional input. The only required parametr is `pName` which will be the name of the group that is created. If `pTargetCard` is empty then the DataView group control will be added to the current card of the `topStack`. If you would like to assign a behavior to the DataView group control other than the "DataView Behavior" stack then pass a reference to it in `pBehavior`. For example, if you want to create a new DataView group control in the current card of the `topStack` that uses the DataView Array controller then you would make the following call:
+
+```
+createDataViewControl "My DataView", empty, the long id of stack "DataView Array Controller Behavior"
+```
+
+`createDataViewControlWithOptions` will display a dialog with additional options. `pTargetCard` and `pBehavior` behave the same way as for `createDataViewControl`. 
+
+The modal dialog that appears has a couple of additional options:
+
+- There is a field for entering a name for the DataView group control.
+- There is a checkbox for creating a row template in the *./templates* folder of your Levure application.
+- There is a checkbox for specifying that you want to create a new behavior to assign to the DataView group control. This new behavior is used for your application specific code that you want to attach to the DataView. It will be saved as a script only stack in a "behaviors" folder sitting alongside the stack that the DataView is created in. The script only stack file will also be added to the `stackFiles` property of the stack.
+
+If you pass in a value for `pBehavior` then `pBehavior` will be assigned as the behavior of the new behavior that is created. If you do not pass in `pBehavior` then the "DataView Behavior" stack will be assigned as the behavior of the new behavior.
+
+**Note:** If you plan on adding your application specific logic directly to the DataView group control script then you do not need to create an additional behavior script. Creating the additional behavior script is only necessary if you are using version control with your application or if prefer editing your LiveCode scripts in a separate text editor.
 
 ## Assigning data to a DataView
 
