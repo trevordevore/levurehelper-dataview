@@ -149,7 +149,13 @@ private command _createRowTemplate pDataViewControl
 
   # Create the behavior for the row template group
   if tError is empty then
-    local tBehaviorName, tBehaviorFilename, tScript
+    local tRowBehaviorTemplateFile, tBehaviorName, tBehaviorFilename, tScript
+
+    put the filename of me into tRowBehaviorTemplateFile
+    set the itemDelimiter to "/"
+    put "row template script.livecodescript" into the last item of tRowBehaviorTemplateFile
+    put url("binfile:" & tRowBehaviorTemplateFile) into tScript
+    put textDecode(tScript, "utf8") into tScript
 
     put tDataViewName && "Default Row Template Behavior" into tBehaviorName
     put _makeFilenameFromControlName(tDataViewName && "Default Row Template") into tBehaviorFilename
@@ -170,21 +176,6 @@ private command _createRowTemplate pDataViewControl
     put tRowControl into tTemplateStylesA["default"]
     set the viewProp["row style templates"] of pDataViewControl to tTemplateStylesA
   end if
-
-  # TODO:
-  # 1) Create appropriate name for template stack folder in `./templates/`
-  # 2) Create appropriate name for template stack in `./templates/FOLDER/`
-  # 3) Create behavior for row template that will go in `./templates/FOLDER/behaviors/`
-  # 4) Create folder in ./templates
-  # 5) Create and save behavior script only stack.
-  # 4) Create new stack for row template group and resize.
-  # 5) copy group "Row Template" of stack "DataViewControlTemplate" to the new stack.
-  # 6) Assign behavior to new template row group.
-  # 7) Add row template group behavior script to stackFiles of stack
-  # 6) Save stack in templates/FOLDER
-  # 7) Create array with "default" key and assign it to the `viewProp["row style templates"]` of the DataView.
-
-  -- create stack tStackName
 
   if tError is empty then
     return empty for value

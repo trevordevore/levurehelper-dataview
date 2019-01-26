@@ -39,6 +39,20 @@ If you pass in a value for `pBehavior` then `pBehavior` will be assigned as the 
 
 **Note:** If you plan on adding your application specific logic directly to the DataView group control script then you do not need to create an additional behavior script. Creating the additional behavior script is only necessary if you are using version control with your application or if prefer editing your LiveCode scripts in a separate text editor.
 
+Here is an example of creating a new DataView that uses the array controller and populating it with some test data. It is assumed that in the dialog you opted to create a row behavior. The row template that is created is coded to display a "label" key in each row.
+
+```
+createDataViewControlWithOptions "My DataView", empty, the long id of stack "DataView Array Controller Behavior"
+
+put "Line 1" into tA[1]["label"]
+put "Line 2" into tA[2]["label"]
+put "Line 3" into tA[3]["label"]
+put "Line 4" into tA[4]["label"]
+
+set the dvData of group "My DataView" to tA
+dispatch "RenderView" to group "My DataView"
+```
+
 ## Assigning data to a DataView
 
 To test that a new DataView is working you can create a simple numerically indexed array and assign it to it's `dvData` property. The default row template displays a "title" key in a field so a simple test would look like this:
