@@ -47,9 +47,9 @@ pBehavior: Pass in a reference to a behavior that extends the behavior of the Da
 Description:
 
 Returns:
-it: The long id of the new contorl.
+it: The long id of the new control.
 */
-command createDataViewControlWithPrompts pTargetCard, pBehavior
+command createDataViewControlWithOptions pTargetCard, pBehavior
   local tError, tPropsA, tBehavior, tControl
 
   if pTargetCard is empty then
@@ -85,6 +85,10 @@ command createDataViewControlWithPrompts pTargetCard, pBehavior
   if tError is empty then
     createDataViewControl tPropsA["name"], pTargetCard, pBehavior
     put it into tControl
+
+    if tPropsA["create row template"] then
+      _createRowTemplate tControl
+    end if
   end if
 
   if tError is empty then
@@ -92,7 +96,45 @@ command createDataViewControlWithPrompts pTargetCard, pBehavior
   else
     answer error tError
   end if
-end createDataViewControlWithPrompts
+end createDataViewControlWithOptions
+
+
+private command _createRowTemplate pDataViewControl
+  local tStackName
+
+  put the short name of pDataViewControl && "Row Templates" into tStackName
+  put _makeUniqueStackName(tStackName) into tStackName
+
+  # TODO:
+  # 1) Create appropriate name for template stack folder in `./templates/`
+  # 2) Create appropriate name for template stack in `./templates/FOLDER/`
+  # 3) Create behavior for row template that will go in `./templates/FOLDER/behaviors/`
+  # 4) Create folder in ./templates
+  # 5) Create and save behavior script only stack.
+  # 4) Create new stack for row template group and resize.
+  # 5) copy group "Row Template" of stack "DataViewControlTemplate" to the new stack.
+  # 6) Assign behavior to new template row group.
+  # 7) Add row template group behavior script to stackFiles of stack
+  # 6) Save stack in templates/FOLDER
+  # 7) Create array with "default" key and assign it to the `viewProp["row style templates"]` of the DataView.
+
+  -- create stack tStackName
+end _createRowTemplate
+
+
+private function _makeUniqueStackName pStackName
+  local tCounter, tStackName
+
+  put 1 into tCounter
+  put pStackName into tStackName
+
+  repeat while there is a stack tStackName
+    add 1 to tCounter
+    put pStackName && tCounter into tStackName
+  end repeat
+
+  return tStackName
+end _makeUniqueStackName
 
 
 private command _createBehavior pBehaviorName, pBehaviorFilename, pTargetStack, pParentBehavior, pScript
