@@ -175,6 +175,8 @@ private command _createRowTemplate pDataViewControl
 
     put tRowControl into tTemplateStylesA["default"]
     set the viewProp["row style templates"] of pDataViewControl to tTemplateStylesA
+    set the viewProp["fixed row height"] of pDataViewControl to true
+    set the viewProp["row height"] of pDataViewControl to the height of tRowControl
   end if
 
   if tError is empty then
