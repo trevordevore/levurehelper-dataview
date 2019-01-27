@@ -19,7 +19,7 @@ https://github.com/trevordevore/dataview_demo
 The DataView helper includes two commands which can create DataView group controls in the LiveCode IDE:
 
 - `createDataViewControl pName, pTargetCard, pBehavior`
-- `createDataViewControlWithOptions pTargetCard, pBehavior`
+- `createDataViewControlUsingDialog pTargetCard, pBehavior`
 
 `createDataViewControl` will create a DataView with no additional input. The only required parametr is `pName` which will be the name of the group that is created. If `pTargetCard` is empty then the DataView group control will be added to the current card of the `topStack`. If you would like to assign a behavior to the DataView group control other than the "DataView Behavior" stack then pass a reference to it in `pBehavior`. For example, if you want to create a new DataView group control in the current card of the `topStack` that uses the DataView Array controller then you would make the following call:
 
@@ -27,7 +27,7 @@ The DataView helper includes two commands which can create DataView group contro
 createDataViewControl "My DataView", empty, the long id of stack "DataView Array Controller Behavior"
 ```
 
-`createDataViewControlWithOptions` will display a dialog with additional options. `pTargetCard` and `pBehavior` behave the same way as for `createDataViewControl`. 
+`createDataViewControlUsingDialog` will display a dialog with additional options. `pTargetCard` and `pBehavior` behave the same way as for `createDataViewControl`. 
 
 The modal dialog that appears has a couple of additional options:
 
@@ -42,7 +42,7 @@ If you pass in a value for `pBehavior` then `pBehavior` will be assigned as the 
 Here is an example of creating a new DataView that uses the array controller and populating it with some test data. It is assumed that in the dialog you opted to create a row behavior. The row template that is created is coded to display a "label" key in each row.
 
 ```
-createDataViewControlWithOptions "My DataView", empty, the long id of stack "DataView Array Controller Behavior"
+createDataViewControlUsingDialog "My DataView", empty, the long id of stack "DataView Array Controller Behavior"
 
 put "Line 1" into tA[1]["label"]
 put "Line 2" into tA[2]["label"]
@@ -50,6 +50,13 @@ put "Line 3" into tA[3]["label"]
 put "Line 4" into tA[4]["label"]
 
 set the dvData of group "My DataView" to tA
+dispatch "RenderView" to group "My DataView"
+```
+
+If you make changes to the row template group and want to see the change reflected in the DataView then issue the following calls:
+
+```
+dispatch "ResetView" to group "My DataView"
 dispatch "RenderView" to group "My DataView"
 ```
 

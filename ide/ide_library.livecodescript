@@ -49,7 +49,7 @@ Description:
 Returns:
 it: The long id of the new control.
 */
-command createDataViewControlWithOptions pTargetCard, pBehavior
+command createDataViewControlUsingDialog pTargetCard, pBehavior
   local tError, tPropsA, tBehavior, tControl
 
   if pTargetCard is empty then
@@ -97,7 +97,7 @@ command createDataViewControlWithOptions pTargetCard, pBehavior
   else if tError is not "cancel" then
     answer error tError
   end if
-end createDataViewControlWithOptions
+end createDataViewControlUsingDialog
 
 
 private command _createRowTemplate pDataViewControl
