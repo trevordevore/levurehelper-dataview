@@ -14,7 +14,7 @@ to the group and the controls in the group.
 
 Returns: The long id of the new control.
 */
-command createDataViewControl pName, pTargetCard, pBehavior
+command dvIdeCreateDataViewControl pName, pTargetCard, pBehavior
   local tControl, tTemplatesA
 
   if pName is empty then
@@ -34,7 +34,7 @@ command createDataViewControl pName, pTargetCard, pBehavior
   set the behavior of tControl to pBehavior
 
   return tControl for value
-end createDataViewControl
+end dvIdeCreateDataViewControl
 
 
 /**
@@ -43,20 +43,21 @@ Summary: Creates a new DataView after prompting the user for some options.
 Parameters:
 pTargetCard: A reference to the card to create the DataView on. Default is the current card of the topStack.
 pBehavior: Pass in a reference to a behavior that extends the behavior of the DataView. For example, the behavior for a DataView Tree or DataView array controller. Optional.
+pRowStyleTemplateGroupsA: An array keyed by style names. See `dvIdeCreateRowTemplates`.
 
 Description:
 
 Returns:
-it: The long id of the new control.
+it: The long id of the new control. Empty if an error occurs.
 */
-command createDataViewControlUsingDialog pTargetCard, pBehavior
+command dvIdeCreateDataViewControlUsingDialog pTargetCard, pBehavior, pRowStyleTemplateGroupsA
   local tError, tPropsA, tBehavior, tControl
 
   if pTargetCard is empty then
     put the long id of the current card of the topStack into pTargetCard
   end if
 
-  modal stack "CreateDataViewDialog"
+  modal stack "dvIdeCreateDataViewDialog"
   if the dialogData is "cancel" then
     put "cancel" into tError
   end if
@@ -72,7 +73,7 @@ command createDataViewControlUsingDialog pTargetCard, pBehavior
         put the long id of stack "DataView Behavior" into tParentBehavior
       end if
 
-      _createBehavior tPropsA["behavior name"], tPropsA["behavior filename"], \
+      dvIdeCreateBehaviorStack tPropsA["behavior name"], tPropsA["behavior filename"], \
             the long id of the owner of pTargetCard, tParentBehavior
       put the result into tError
 
@@ -83,26 +84,46 @@ command createDataViewControlUsingDialog pTargetCard, pBehavior
   end if
 
   if tError is empty then
-    createDataViewControl tPropsA["name"], pTargetCard, pBehavior
+    dvIdeCreateDataViewControl tPropsA["name"], pTargetCard, pBehavior
     put it into tControl
 
     if tPropsA["create row template"] then
       local tStyle
 
-      _createRowTemplate tControl, tPropsA["row template styles"]
+      dvIdeCreateRowTemplates tControl, tPropsA["row template styles"], pRowStyleTemplateGroupsA
       put the result into tError
     end if
   end if
 
   if tError is empty then
     return tControl for value
-  else if tError is not "cancel" then
-    answer error tError
+  else
+    if tError is not "cancel" then
+      answer error tError
+    end if
+    return tError for error
   end if
-end createDataViewControlUsingDialog
+end dvIdeCreateDataViewControlUsingDialog
 
 
-private command _createRowTemplate pDataViewControl, pStyles
+/**
+Summary: Creates templates for row styles for a DataView
+
+Parameters:
+pDataViewControl: A reference to the DataView control the template(s) will be assigned to.
+pStyles: A comma-delimited list of style names. Default is `default`.
+pRowStyleTemplateGroupsA: An array keyed by style names. The value is the long id of a group to use as the template for that style. Optional.
+
+Description:
+Pass in pRowStyleTemplateGroupsA["default"] to act as the default group for any
+styles that don't have a specific group assigned to them. If `pRowStyleTemplateGroupsA`
+does not contain a matching key then the default row template included with the
+DataView helper is used.
+
+Returns:
+the result: error message
+*/
+command dvIdeCreateRowTemplates pDataViewControl, pStyles, pRowStyleTemplateGroupsA
   local tError, tDataViewName, tStackName, tTemplateFolder
   local tRowTemplateStackFilename, tControlTemplateFolder
 
@@ -120,7 +141,7 @@ private command _createRowTemplate pDataViewControl, pStyles
 
   if tError is empty then
     put _makeFilenameFromControlName(tStackName) into tRowTemplateStackFilename
-    put _makeFolderNameFromControlName(tStackName) into tControlTemplateFolder
+    put _makeFolderNameFromControlName(tDataViewName) into tControlTemplateFolder
     put ".livecode" after tRowTemplateStackFilename
     put _makeUniqueFolderNameForFolder(tTemplateFolder, tControlTemplateFolder) into tControlTemplateFolder
     put tTemplateFolder & "/" & tControlTemplateFolder into tControlTemplateFolder
@@ -137,20 +158,10 @@ private command _createRowTemplate pDataViewControl, pStyles
   if tError is empty then
     local tRowControl, tRect, tStyle
     local tTemplateStylesA, tTop
-    local tRowBehaviorTemplateFile, tBehaviorName, tBehaviorFilename, tScript
+    local tBehaviorName, tBehaviorFilename, tScript
 
     put 0 into tTop
     put the viewProp["row style templates"] of pDataViewControl into tTemplateStylesA
-    put the filename of me into tRowBehaviorTemplateFile
-    set the itemDelimiter to "/"
-    put "row template script.livecodescript" into the last item of tRowBehaviorTemplateFile
-    set the itemDelimiter to ","
-    put url("binfile:" & tRowBehaviorTemplateFile) into tScript
-    put the result into tError
-  end if
-
-  if tError is empty then
-    put textDecode(tScript, "utf8") into tScript
 
     create invisible stack tStackName
     save stack tStackName as (tControlTemplateFolder & "/" & tRowTemplateStackFilename)
@@ -158,9 +169,19 @@ private command _createRowTemplate pDataViewControl, pStyles
   end if
 
   if tError is empty then
+    local tTemplateControl
+
     repeat for each item tStyle in pStyles
       # Create the row template group
-      copy group "Row Template" of stack "DataViewControlTemplate" to stack tStackName
+      put pRowStyleTemplateGroupsA[tStyle] into tTemplateControl
+      if pRowStyleTemplateGroupsA[tStyle] is empty then
+        put pRowStyleTemplateGroupsA["default"] into tTemplateControl
+      end if
+      if pRowStyleTemplateGroupsA[tStyle] is empty then
+        put the long id of group "Row Template" of stack "DataViewSampleRowTemplate" into tTemplateControl
+      end if
+
+      copy tTemplateControl to stack tStackName
       put it into tRowControl
       put tRowControl into tTemplateStylesA[tStyle]
       set the name of tRowControl to tStyle && the short name of tRowControl
@@ -171,7 +192,10 @@ private command _createRowTemplate pDataViewControl, pStyles
       # Create the behavior for the row template group
       put tDataViewName && tStyle && "Row Template Behavior" into tBehaviorName
       put _makeFilenameFromControlName(tDataViewName && tStyle && "Row Template") into tBehaviorFilename
-      _createBehavior tBehaviorName, tBehaviorFilename, the long id of stack tStackName, empty, tScript
+
+      put the script of (the behavior of tTemplateControl) into tScript
+
+      dvIdeCreateBehaviorStack tBehaviorName, tBehaviorFilename, the long id of stack tStackName, empty, tScript
       put the result into tError
 
       if tError is not empty then exit repeat
@@ -202,55 +226,10 @@ private command _createRowTemplate pDataViewControl, pStyles
   else
     return tError for error
   end if
-end _createRowTemplate
+end dvIdeCreateRowTemplates
 
 
-private function _makeUniqueStackName pStackName
-  local tCounter, tStackName
-
-  put 1 into tCounter
-  put pStackName into tStackName
-
-  repeat while there is a stack tStackName
-    add 1 to tCounter
-    put pStackName && tCounter into tStackName
-  end repeat
-
-  return tStackName
-end _makeUniqueStackName
-
-
-private function _makeFilenameFromControlName pControlName
-  replace space with "_" in pControlName
-  put tolower(pControlName) into pControlName
-  return pControlName
-end _makeFilenameFromControlName
-
-
-private function _makeFolderNameFromControlName pControlName
-  replace space with "-" in pControlName
-  put tolower(pControlName) into pControlName
-  return pControlName
-end _makeFolderNameFromControlName
-
-
-private function _makeUniqueFolderNameForFolder pParentFolder, pSuggestedName
-  local tFolders, tFolderName, i
-
-  put folders(pParentFolder) into tFolders
-
-  put pSuggestedName into tFolderName
-
-  repeat while tFolderName is among the lines of tFolders
-    add 1 to i
-    put pSuggestedName && i into tFolderName
-  end repeat
-
-  return tFolderName
-end _makeUniqueFolderNameForFolder
-
-
-private command _createBehavior pBehaviorName, pBehaviorFilename, pTargetStack, pParentBehavior, pScript
+command dvIdeCreateBehaviorStack pBehaviorName, pBehaviorFilename, pTargetStack, pParentBehavior, pScript
   local tError, tBehaviorsFolder
 
   put the filename of pTargetStack into tBehaviorsFolder
@@ -301,4 +280,49 @@ private command _createBehavior pBehaviorName, pBehaviorFilename, pTargetStack, 
   else
     return tError for error
   end if
-end _createBehavior
+end dvIdeCreateBehaviorStack
+
+
+private function _makeUniqueStackName pStackName
+  local tCounter, tStackName
+
+  put 1 into tCounter
+  put pStackName into tStackName
+
+  repeat while there is a stack tStackName
+    add 1 to tCounter
+    put pStackName && tCounter into tStackName
+  end repeat
+
+  return tStackName
+end _makeUniqueStackName
+
+
+private function _makeFilenameFromControlName pControlName
+  replace space with "_" in pControlName
+  put tolower(pControlName) into pControlName
+  return pControlName
+end _makeFilenameFromControlName
+
+
+private function _makeFolderNameFromControlName pControlName
+  replace space with "-" in pControlName
+  put tolower(pControlName) into pControlName
+  return pControlName
+end _makeFolderNameFromControlName
+
+
+private function _makeUniqueFolderNameForFolder pParentFolder, pSuggestedName
+  local tFolders, tFolderName, i
+
+  put folders(pParentFolder) into tFolders
+
+  put pSuggestedName into tFolderName
+
+  repeat while tFolderName is among the lines of tFolders
+    add 1 to i
+    put pSuggestedName && i into tFolderName
+  end repeat
+
+  return tFolderName
+end _makeUniqueFolderNameForFolder

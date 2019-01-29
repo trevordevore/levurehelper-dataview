@@ -18,16 +18,16 @@ https://github.com/trevordevore/dataview_demo
 
 The DataView helper includes two commands which can create DataView group controls in the LiveCode IDE:
 
-- `createDataViewControl pName, pTargetCard, pBehavior`
-- `createDataViewControlUsingDialog pTargetCard, pBehavior`
+- `dvIdeCreateDataViewControl pName, pTargetCard, pBehavior`
+- `dvIdeCreateDataViewControlUsingDialog pTargetCard, pBehavior, pRowStyleTemplateGroupsA`
 
-`createDataViewControl` will create a DataView with no additional input. The only required parametr is `pName` which will be the name of the group that is created. If `pTargetCard` is empty then the DataView group control will be added to the current card of the `topStack`. If you would like to assign a behavior to the DataView group control other than the "DataView Behavior" stack then pass a reference to it in `pBehavior`. For example, if you want to create a new DataView group control in the current card of the `topStack` that uses the DataView Array controller then you would make the following call:
+`dvIdeCreateDataViewControl` will create a DataView with no additional input. The only required parametr is `pName` which will be the name of the group that is created. If `pTargetCard` is empty then the DataView group control will be added to the current card of the `topStack`. If you would like to assign a behavior to the DataView group control other than the "DataView Behavior" stack then pass a reference to it in `pBehavior`. For example, if you want to create a new DataView group control in the current card of the `topStack` that uses the DataView Array controller then you would make the following call:
 
 ```
-createDataViewControl "My DataView", empty, the long id of stack "DataView Array Controller Behavior"
+dvIdeCreateDataViewControl "My DataView", empty, the long id of stack "DataView Array Controller Behavior"
 ```
 
-`createDataViewControlUsingDialog` will display a dialog with additional options. `pTargetCard` and `pBehavior` behave the same way as for `createDataViewControl`. 
+`dvIdeCreateDataViewControlUsingDialog` will display a dialog with additional options. `pTargetCard` and `pBehavior` behave the same way as for `dvIdeCreateDataViewControl`. 
 
 The modal dialog that appears has a couple of additional options:
 
@@ -43,7 +43,7 @@ If you pass in a value for `pBehavior` then `pBehavior` will be assigned as the 
 Here is an example of creating a new DataView that uses the array controller and populating it with some test data. It is assumed that in the dialog you opted to create a row behavior. The row template that is created is coded to display a "label" key in each row.
 
 ```
-createDataViewControlUsingDialog empty, the long id of stack "DataView Array Controller Behavior"
+dvIdeCreateDataViewControlUsingDialog empty, the long id of stack "DataView Array Controller Behavior"
 
 put "Line 1" into tA[1]["label"]
 put "Line 2" into tA[2]["label"]
