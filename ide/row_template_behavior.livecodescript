@@ -1,3 +1,4 @@
+﻿script "DataViewSampleRowTemplateBehavior"
 /**
 Summary: Fill in the controls in the row group with the data associated with the row.
 
