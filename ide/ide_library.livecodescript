@@ -87,7 +87,9 @@ command createDataViewControlUsingDialog pTargetCard, pBehavior
     put it into tControl
 
     if tPropsA["create row template"] then
-      _createRowTemplate tControl
+      local tStyle
+
+      _createRowTemplate tControl, tPropsA["row template styles"]
       put the result into tError
     end if
   end if
@@ -100,9 +102,11 @@ command createDataViewControlUsingDialog pTargetCard, pBehavior
 end createDataViewControlUsingDialog
 
 
-private command _createRowTemplate pDataViewControl
+private command _createRowTemplate pDataViewControl, pStyles
   local tError, tDataViewName, tStackName, tTemplateFolder
   local tRowTemplateStackFilename, tControlTemplateFolder
+
+  if pStyles is empty then put "default" into pStyles
 
   # Set up control names, folder names, and create folders
   put the short name of pDataViewControl into tDataViewName
@@ -131,15 +135,55 @@ private command _createRowTemplate pDataViewControl
 
   # Create row template stack that goes in ./templates folder
   if tError is empty then
-    local tRowControl, tRect
+    local tRowControl, tRect, tStyle
+    local tTemplateStylesA, tTop
+    local tRowBehaviorTemplateFile, tBehaviorName, tBehaviorFilename, tScript
+
+    put 0 into tTop
+    put the viewProp["row style templates"] of pDataViewControl into tTemplateStylesA
+    put the filename of me into tRowBehaviorTemplateFile
+    set the itemDelimiter to "/"
+    put "row template script.livecodescript" into the last item of tRowBehaviorTemplateFile
+    set the itemDelimiter to ","
+    put url("binfile:" & tRowBehaviorTemplateFile) into tScript
+    put the result into tError
+  end if
+
+  if tError is empty then
+    put textDecode(tScript, "utf8") into tScript
 
     create invisible stack tStackName
-    copy group "Row Template" of stack "DataViewControlTemplate" to stack tStackName
-    put it into tRowControl
-    set the topleft of tRowControl to 0,0
+    save stack tStackName as (tControlTemplateFolder & "/" & tRowTemplateStackFilename)
+    put the result into tError
+  end if
+
+  if tError is empty then
+    repeat for each item tStyle in pStyles
+      # Create the row template group
+      copy group "Row Template" of stack "DataViewControlTemplate" to stack tStackName
+      put it into tRowControl
+      put tRowControl into tTemplateStylesA[tStyle]
+      set the name of tRowControl to tStyle && the short name of tRowControl
+
+      set the topleft of tRowControl to 0,tTop
+      put the bottom of tRowControl + 20 into tTop
+
+      # Create the behavior for the row template group
+      put tDataViewName && tStyle && "Row Template Behavior" into tBehaviorName
+      put _makeFilenameFromControlName(tDataViewName && tStyle && "Row Template") into tBehaviorFilename
+      _createBehavior tBehaviorName, tBehaviorFilename, the long id of stack tStackName, empty, tScript
+      put the result into tError
+
+      if tError is not empty then exit repeat
+
+      set the behavior of tRowControl to the long id of stack tBehaviorName
+    end repeat
+  end if
+
+  if tError is empty then
     put the rect of stack tStackName into tRect
     put item 1 of tRect + the width of tRowControl + 50 into item 3 of tRect
-    put item 2 of tRect + the height of tRowControl + 50 into item 4 of tRect
+    put item 2 of tRect + the bottom of tRowControl + 50 into item 4 of tRect
     set the rect of stack tStackName to tRect
     set the visible of stack tStackName to true
 
@@ -147,33 +191,7 @@ private command _createRowTemplate pDataViewControl
     put the result into tError
   end if
 
-  # Create the behavior for the row template group
   if tError is empty then
-    local tRowBehaviorTemplateFile, tBehaviorName, tBehaviorFilename, tScript
-
-    put the filename of me into tRowBehaviorTemplateFile
-    set the itemDelimiter to "/"
-    put "row template script.livecodescript" into the last item of tRowBehaviorTemplateFile
-    put url("binfile:" & tRowBehaviorTemplateFile) into tScript
-    put textDecode(tScript, "utf8") into tScript
-
-    put tDataViewName && "Default Row Template Behavior" into tBehaviorName
-    put _makeFilenameFromControlName(tDataViewName && "Default Row Template") into tBehaviorFilename
-    _createBehavior tBehaviorName, tBehaviorFilename, the long id of stack tStackName, empty, tScript
-    put the result into tError
-  end if
-
-  # Assign behavior and save stack again.
-  if tError is empty then
-    set the behavior of tRowControl to the long id of stack tBehaviorName
-    save stack tStackName as (tControlTemplateFolder & "/" & tRowTemplateStackFilename)
-    put the result into tError
-  end if
-
-  if tError is empty then
-    local tTemplateStylesA
-
-    put tRowControl into tTemplateStylesA["default"]
     set the viewProp["row style templates"] of pDataViewControl to tTemplateStylesA
     set the viewProp["fixed row height"] of pDataViewControl to true
     set the viewProp["row height"] of pDataViewControl to the height of tRowControl
