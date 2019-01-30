@@ -12,3 +12,10 @@ frontscripts:
 ui:
   - filename: dataview.livecode
     encrypt: false
+  - filename: ide/row_template.livecode
+    encrypt: false
+  - filename: ide/create_new_dataview_dialog.livecode
+    distribute: false
+libraries:
+  - filename: ide/ide_library.livecodescript
+    distribute: false
