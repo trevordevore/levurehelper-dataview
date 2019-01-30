@@ -24,7 +24,11 @@ end dvData
 
 command DataForRow pRow, @rDataA, @rTemplateStyle
   put sDataA[pRow] into rDataA
-  put "default" into rTemplateStyle
+  if rDataA["@style"] is not empty then
+    put rDataA["@style"] into rTemplateStyle
+  else
+    put "default" into rTemplateStyle
+  end if
 end DataForRow
 
 
