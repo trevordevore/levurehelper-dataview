@@ -4,7 +4,7 @@ local sIdToRowLookupA # cache created when _rowOfId() is called
 
 
 /**
-Summary: Set the array to feed to the DataView.
+Summary: Set the array to feed to the DataView and Renders the DataView.
 
 Parameters:
 pDataA: A numerically indexed array of arrays.
@@ -19,6 +19,10 @@ Returns: nothing
 setProp dvData pDataA
   put pDataA into sDataA
   put empty into sIdToRowLookupA
+  lock screen
+  ResetView
+  RenderView
+  unlock screen
 end dvData
 
 
