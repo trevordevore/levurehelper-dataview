@@ -712,7 +712,7 @@ command DeleteRows pRows
   # If caching is on then all row -> cache keys must be updated.
   if not clearTheCache then
     _updateControlCacheForActiveRange 0, 0 # This cleans up the current rows in use (HAS to happen before refreshing cache keys otherwise cached keys and rows won't match up)
-    _refreshRowCacheKeys # This remaps data cache keys to the appropriate row.
+    _syncCacheKeyToRowMappings false
   end if
 
   _ensureIntegrityOfSelectedRows
@@ -2769,7 +2769,7 @@ private command _renderView pRefreshDataInCachedControls
   ## Cache controls based on settings
   if the viewProp["cache"] of me is among the items of "eager,lazy" then
     _updateControlCacheForActiveRange 0, 0 # This cleans up the current rows in use
-    _refreshRowCacheKeys # This remaps data cache keys to the appropriate row.
+    _syncCacheKeyToRowMappings true
     _cacheControls pRefreshDataInCachedControls # This caches the controls, creating as needed, and associating them with a row.
   else if not the viewProp["fixed row height"] of me then
     _updateControlCacheForActiveRange 0, 0
@@ -3191,14 +3191,22 @@ end _getCacheKeyForRow
 
 
 /**
-Summary: Refreshes the cache key for each row. Only applies if caching is on.
+Summary: Syncs up cache keys and the corresponding control with rows. Only applies if caching is on.
 
 Parameters:
 pRemoveStaleCacheKeys: If true then stale caches will be removed. Default is false.
 
+Description:
+Refreshes the mapping between rows and the corresponding cache key. This will ask the
+data source for the cache keys for all rows and then update the mapping between rows and
+cache keys.
+
+If pRemoveStaleCacheKeys is true then any cache keys that are mapped to a control but which
+no longer are associated with a row will be cleared out, along with the associated control.
+
 Returns: empty
 */
-private command _refreshRowCacheKeys pRemoveStaleCacheKeys
+private command _syncCacheKeyToRowMappings pRemoveStaleCacheKeys
   local refreshKeys
 
   set the wholematches to true
@@ -3245,7 +3253,7 @@ private command _refreshRowCacheKeys pRemoveStaleCacheKeys
   end if
 
   return empty
-end _refreshRowCacheKeys
+end _syncCacheKeyToRowMappings
 
 
 /**
