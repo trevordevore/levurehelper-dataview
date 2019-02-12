@@ -709,12 +709,6 @@ command DeleteRows pRows
     end if
   end repeat
 
-  # If caching is on then all row -> cache keys must be updated.
-  if not clearTheCache then
-    _updateControlCacheForActiveRange 0, 0 # This cleans up the current rows in use (HAS to happen before refreshing cache keys otherwise cached keys and rows won't match up)
-    _syncCacheKeyToRowMappings false
-  end if
-
   _ensureIntegrityOfSelectedRows
 
   ## Redraw everything. Note that RefreshViewRows won't reload data in cached controls, just refresh the view.
