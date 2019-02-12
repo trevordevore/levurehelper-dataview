@@ -3525,6 +3525,12 @@ private command _setupRowControl pRow, pRowControl, pForceFillInData
 
   if theStyle is empty then put "default" into theStyle
 
+  # Is style of row changing?
+  if pRowControl is not empty and the dvTemplateStyle of pRowControl is not theStyle then
+    _cleanupControl _getCacheKeyForRow(pRow), pRow, pRowControl, true
+    put empty into pRowControl
+  end if
+
   if pRowControl is empty then
     put _getControlOfStyle(theStyle) into pRowControl
   end if
