@@ -3323,18 +3323,18 @@ private command _prepareRowForDisplay pRow, pRowControl, pRowWidth, pTopLeft
     if the dvIsDirty of pRowControl then
       unlock messages
       _setupRowControl pRow, pRowControl, true
-
-      lock messages
-      set the dvIsDirty of pRowControl to false
-      unlock messages
     end if
 
     ## Regular control
-    if sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["resize"] then
+    if sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["resize"] or the dvIsDirty of pRowControl then
       unlock messages
       _dispatchLayoutControl pRowControl, pRow, pRowWidth, true
       put true into controlWasUpdated
     end if
+
+    lock messages
+    set the dvIsDirty of pRowControl to false
+    unlock messages
   end if
 
   set the lockMessages to msgsAreLocked
