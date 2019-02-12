@@ -466,7 +466,7 @@ command RenderRows pRows
         # Control isn't valid for row type. Move back into cache and get a new control
         put the topleft of theControl into theTopLeft
 
-        _cleanupControl theCacheKey, theRow, theControl
+        _cleanupControl theCacheKey, theRow, theControl, true
 
         _setupRowControl theRow, empty, true
         put the result into theControl
@@ -2881,7 +2881,7 @@ end _initializeHeightsForVariableSizedRows
 /**
 Summary: Handles cleanup of a control based on cache setting.
 */
-private command _cleanupControl pCacheKey, pRow, pControl
+private command _cleanupControl pCacheKey, pRow, pControl, pDeleteInTime
   if the viewProp["cache"] of me is not among the items of "eager,lazy" then
     _moveControlIntoUnusedCachePool pCacheKey, pRow # this sends cleanup message
   else
@@ -2892,7 +2892,12 @@ private command _cleanupControl pCacheKey, pRow, pControl
     if the long id of pControl is in the focusedObject then
       focus on graphic "dvBackground" of me ## engine doesn't like the focused control in a group being deleted
     end if
-    delete pControl
+
+    if not pDeleteInTime then
+      delete pControl
+    else
+      send "__deleteRowControl pControl" to me in 0 seconds
+    end if
     unlock messages
 
     delete local sViewPropsA["controls"]["row cache keys"][pRow] # break link between row and cache key
@@ -2901,6 +2906,16 @@ private command _cleanupControl pCacheKey, pRow, pControl
 
   return empty
 end _cleanupControl
+
+
+command __deleteRowControl pControl
+  local msgsAreLocked
+
+  put the lockmessages into msgsAreLocked
+  lock messages
+  if there is a pControl then delete pControl
+  set the lockmessages to msgsAreLocked
+end __deleteRowControl
 
 
 /**
@@ -3202,6 +3217,8 @@ private command _refreshRowCacheKeys pRemoveStaleCacheKeys
 
     # look for stale keys
     if pRemoveStaleCacheKeys then
+      local tCacheKey
+
       repeat for each key theRow in sViewPropsA["controls"]["row cache keys"]
         # Check for match between old row cache key and new row cache key
         if line theRow of theCacheKeys is not sViewPropsA["controls"]["row cache keys"][theRow] then
@@ -3210,20 +3227,8 @@ private command _refreshRowCacheKeys pRemoveStaleCacheKeys
           if sViewPropsA["controls"]["row cache keys"][theRow] is not among the lines of theCacheKeys then
 
             # Nope. Clean out the cache key entry.
-            put sViewPropsA["controls"]["cache"][ sViewPropsA["controls"]["row cache keys"][theRow] ]["control"] into theControl
-
-            # Send message to control telling it to clean up after itself
-            dispatch "CleanupAfterRowControl" to theControl
-
-            lock messages
-            if the long id of theControl is in the focusedObject then
-              focus on graphic "dvBackground" of me ## engine doesn't like the focused control in a group being deleted
-            end if
-            delete theControl
-            unlock messages
-
-            delete local sViewPropsA["controls"]["cache"][ sViewPropsA["controls"]["row cache keys"][theRow] ] # delete cache entry
-            delete local sViewPropsA["controls"]["row cache keys"][theRow] # break link between row and cache key
+            put sViewPropsA["controls"]["row cache keys"][theRow] into tCacheKey
+            _cleanupControl tCacheKey, theRow, sViewPropsA["controls"]["cache"][tCacheKey]["control"], true
           end if
         end if
       end repeat
