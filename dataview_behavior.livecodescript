@@ -1963,6 +1963,35 @@ getProp dvControlOfRow [pRow]
 end dvControlOfRow
 
 
+getProp dvRowIsDirty[pRow]
+  local tControl
+
+  put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["control"] into tControl
+  if there is a tControl then
+    local tValue
+
+    lock messages
+    put the dvIsDirty of tControl into tValue
+    unlock messages
+    return tValue
+  else
+    return false
+  end if
+end dvRowIsDirty
+
+
+setProp dvRowIsDirty[pRow] pIsDirty
+  local tControl
+
+  put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["control"] into tControl
+  if there is a tControl then
+    lock messages
+    set the dvIsDirty of tControl to pIsDirty is true
+    unlock messages
+  end if
+end dvRowIsDirty
+
+
 /**
 Summary: Returns whether or not a row has been rendered. It it hasn't been rendered then it is a ghost control.
 
@@ -3291,6 +3320,15 @@ private command _prepareRowForDisplay pRow, pRowControl, pRowWidth, pTopLeft
     _dispatchLayoutControl pRowControl, pRow, pRowWidth, true
     put true into controlWasUpdated
   else
+    if the dvIsDirty of pRowControl then
+      unlock messages
+      _setupRowControl pRow, pRowControl, true
+
+      lock messages
+      set the dvIsDirty of pRowControl to false
+      unlock messages
+    end if
+
     ## Regular control
     if sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["resize"] then
       unlock messages
