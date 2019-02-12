@@ -462,7 +462,7 @@ command RenderRows pRows
     put sViewPropsA["controls"]["cache"][theCacheKey]["control"] into theControl
 
     if theControl is not empty then
-      if the uTemplateStyle of theControl is not theStyle then
+      if the dvTemplateStyle of theControl is not theStyle then
         # Control isn't valid for row type. Move back into cache and get a new control
         put the topleft of theControl into theTopLeft
 
@@ -4146,7 +4146,7 @@ private function _getControlOfStyle pStyle
       put _customControlReference(it) into theControl
 
       ## Make sure a style is set
-      set uTemplateStyle of theControl to pStyle
+      set dvTemplateStyle of theControl to pStyle
 
       set the lockMessages to msgsAreLocked
     end if
@@ -4167,7 +4167,7 @@ Returns: control reference or empty
 private function _findAvailableControlOfStyle pStyle
   repeat for each line theControl in sViewPropsA["controls"]["available"]
     try ## in case control doesn't exist
-      if the uTemplateStyle of theControl is pStyle then
+      if the dvTemplateStyle of theControl is pStyle then
         return theControl
       end if
     catch e
