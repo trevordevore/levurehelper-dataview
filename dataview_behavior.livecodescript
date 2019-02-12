@@ -673,8 +673,6 @@ Returns: empty
 */
 command DeleteRows pRows
   local theRow, theCacheKey, theItemNo
-  local theControl
-  local clearTheCache
   local msgsAreLocked
 
   put the lockMessages into msgsAreLocked
@@ -682,24 +680,14 @@ command DeleteRows pRows
 
   set the wholeMatches to true
 
-  put the viewProp["cache"] of me is not among the items of "eager,lazy" into clearTheCache
-
-  ## Go backwards so as not to mess up index offsets 11-08-2012: Not sure if this is still relevants
+  ## Go backwards so as not to mess up index offsets 11-08-2012: Not sure if this is still relevant
   sort items of pRows descending numeric
 
   ## Move control back into cache of available controls
   repeat for each item theRow in pRows
     put _getCacheKeyForRow(theRow) into theCacheKey
     if sViewPropsA["controls"]["cache"][theCacheKey] is an array then
-      put sViewPropsA["controls"]["cache"][theCacheKey]["control"] into theControl
-
-      if there is a theControl then
-        _cleanupControl theCacheKey, theRow, theControl
-      else
-        # control doesn't exist but we still need to purge the cachekey stuff
-        delete local sViewPropsA["controls"]["row cache keys"][theRow] # break link between row and cache key
-        delete local sViewPropsA["controls"]["cache"][theCacheKey]
-      end if
+      _cleanupControl theCacheKey, theRow, sViewPropsA["controls"]["cache"][theCacheKey]["control"], true
     end if
 
     # Remove from rows in use
