@@ -2897,19 +2897,21 @@ private command _cleanupControl pCacheKey, pRow, pControl, pDeleteInTime
     _moveControlIntoUnusedCachePool pCacheKey, pRow # this sends cleanup message
   else
     # Send message to control telling it to clean up after itself
-    dispatch "CleanupAfterRowControl" to pControl
+    if there is a pControl then
+      dispatch "CleanupAfterRowControl" to pControl
 
-    lock messages
-    if the long id of pControl is in the focusedObject then
-      focus on graphic "dvBackground" of me ## engine doesn't like the focused control in a group being deleted
-    end if
+      lock messages
+      if the long id of pControl is in the focusedObject then
+        focus on graphic "dvBackground" of me ## engine doesn't like the focused control in a group being deleted
+      end if
 
-    if not pDeleteInTime then
-      delete pControl
-    else
-      send "__deleteRowControl pControl" to me in 0 seconds
+      if not pDeleteInTime then
+        delete pControl
+      else
+        send "__deleteRowControl pControl" to me in 0 seconds
+      end if
+      unlock messages
     end if
-    unlock messages
 
     delete local sViewPropsA["controls"]["row cache keys"][pRow] # break link between row and cache key
     delete local sViewPropsA["controls"]["cache"][pCacheKey]
