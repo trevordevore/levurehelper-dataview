@@ -51,7 +51,6 @@ put "Line 3" into tA[3]["label"]
 put "Line 4" into tA[4]["label"]
 
 set the dvData of group "My DataView" to tA
-dispatch "RenderView" to group "My DataView"
 ```
 
 If you make changes to the row template group and want to see the change reflected in the DataView then issue the following calls:
