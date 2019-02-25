@@ -288,6 +288,7 @@ on touchStart pID
   ## as a whle then the 'else' condition can be removed.
   --   if theSelectionChanged then _selectionChanged thePreviouslyHilitedRows
   --   else _hiliteRowsInVisibleControls
+  pass touchStart
 end touchStart
 
 
@@ -305,6 +306,7 @@ on touchEnd pID
   if sViewPropsA["hilited rows"] is not empty then
     _selectionChanged thePreviouslyHilitedRows
   end if
+  pass touchEnd
 end touchEnd
 
 
@@ -314,6 +316,7 @@ Summary: Sent in cases where user touches row, holds but then starts scrolling.
 */
 on touchRelease
   set the dvHilitedRows of me to empty
+  pass touchRelease
 end touchRelease
 
 
