@@ -3422,19 +3422,31 @@ private command _autoHideScrollbars
 
   ## Auto-hide
   if the viewProp["autohide scrollbars"] of me AND the environment is not "mobile" then
+    local tRight
+
     if the viewProp["content height"] of me <= _getContentWindowHeight() then
       ## hide
       if the visible of scrollbar "dvVScrollbar" of me then
         set the visible of scrollbar "dvVScrollbar" of me to false
+        put the right of group "dvList" of me into tRight
         _resizeSupportingControls
-        _resizeRowControlsAsNeeded
+
+        # "content right padding" may place content in location where showing
+        # the scrollbar doesn't affect how content is drawn.
+        if tRight is not the right of group "dvList" of me then
+          _resizeRowControlsAsNeeded
+        end if
       end if
     else
       ## show
       if not the visible of scrollbar "dvVScrollbar" of me then
         set the visible of scrollbar "dvVScrollbar" of me to true
+        put the right of group "dvList" of me into tRight
         _resizeSupportingControls
-        _resizeRowControlsAsNeeded
+
+        if tRight is not the right of group "dvList" of me then
+          _resizeRowControlsAsNeeded
+        end if
       end if
     end if
   end if
