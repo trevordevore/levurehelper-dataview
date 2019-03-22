@@ -3678,7 +3678,7 @@ private command _dispatchLayoutControl pRowControl, pRow, pWidth, pUpdateContent
   if not the viewProp["fixed row height"] of me AND theResult is not "do not resize" then
     ## When we set up control we locked the height. We need to update the height now.
     put the rect of pRowControl into theRect
-    put item 2 of theRect + the formattedHeight of pRowControl into item 4 of theRect
+    put item 2 of theRect + the formattedHeight of pRowControl - the borderWidth of pRowControl into item 4 of theRect
     set the rect of pRowControl to theRect
     put item 4 of theRect - item 2 of theRect into theHeight
   else
