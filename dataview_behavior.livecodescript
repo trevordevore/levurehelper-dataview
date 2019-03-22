@@ -755,8 +755,10 @@ command ResizeToFit
         item 3 of theMasterRect - the width of scrollbar "dvVScrollbar" of me, \
         item 2 of theMasterRect, item 3 of theMasterRect, item 4 of theMasterRect - max(0, the viewProp["scrollbar corner offset"] of me)
 
-  set the topleft of group "dvListMask" of me to Item 1 to 2 of theMasterRect
-  set the topleft of group "dvList" of me to Item 1 to 2 of theMasterRect
+
+  set the topleft of group "dvListMask" of me to item 1 of theMasterRect + max(0, the viewProp["content left padding"] of me), \
+        item 2 of theMasterRect
+  set the topleft of group "dvList" of me to the topleft of group "dvListMask" of me
   set the visible of scrollbar "dvVScrollbar" of me to the environment is not "mobile" AND the viewProp["content height"] of me > _getContentWindowHeight()
   _resizeSupportingControls
 
@@ -1204,6 +1206,13 @@ setProp viewProp [pProp] pValue
       break
     case "hscroll"
 
+      break
+    case "content left padding"
+    case "content left padding"
+    case "content top padding"
+    case "content bottom padding"
+      set the viewProp[pProp] of me to pValue
+      ResizeToFit
       break
     case "content width"
       if pValue is empty then
@@ -3596,8 +3605,11 @@ private command _resizeSupportingControls
 
   put _workingGroupRect(the long id of me) into tRect
 
+  add max(0, the viewProp["content left padding"] of me) to item 1 of tRect
+  subtract max(0, the viewProp["content right padding"] of me) from item 3 of tRect
+
   if the visible of scrollbar "dvVScrollbar" of me then
-    put the left of scrollbar "dvVScrollbar" of me into item 3 of tRect
+    put min(the left of scrollbar "dvVScrollbar" of me, item 3 of tRect) into item 3 of tRect
   end if
 
   set the rect of group "dvListMask" of me to tRect
