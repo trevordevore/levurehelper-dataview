@@ -1,13 +1,16 @@
 script "DataView Drop Indicator Behavior"
-on resizeControl
-  if the target is not me then pass resizeControl
+command PositionDropIndicator pBeingDroppedAfterRow
+  _resize
+end PositionDropIndicator
 
-  local theViewRect, theRect
 
-  put the rect of me into theViewRect
+private command _resize
+  local tViewRect, tRect
 
-  put the rect of graphic 1 of me into theRect
-  put item 1 of theViewRect into item 1 of theRect
-  put item 3 of theViewRect + 1 into item 3 of theRect
-  set the rect of graphic 1 of me to theRect
-end resizeControl
+  put the rect of me into tViewRect
+
+  put the rect of graphic 1 of me into tRect
+  put item 1 of tViewRect into item 1 of tRect
+  put item 3 of tViewRect + 1 into item 3 of tRect
+  set the rect of graphic 1 of me to tRect
+end _resize
