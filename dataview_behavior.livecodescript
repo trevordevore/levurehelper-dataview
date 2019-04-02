@@ -123,7 +123,7 @@ on rawKeyDown pKeyNum
 
   ## Note: Messages are locked when setting thumbpostion and we call scrolling code directly.
   ##          This is done so that scrolling works when scrollbars are hidden.
-  local theAvailHeight, theScroll
+  local theAvailDistance, theScroll
 
   switch pKeyNum
     case "65360"
@@ -160,8 +160,8 @@ on rawKeyDown pKeyNum
         DeleteFieldEditor true, "close control"
       else
         if the visible of scrollbar "dvVScrollbar" of me or the viewProp["scroll when vScrollbar is hidden"] of me then
-          put the viewProp["content window height"] of me into theAvailHeight
-          put round(theAvailHeight * .1) into theScroll
+          put the viewProp["content window height"] of me into theAvailDistance
+          put round(theAvailDistance * .1) into theScroll
           set the viewProp["vscroll"] of me to round(the thumbPosition of scrollbar "dvVScrollbar" of me) - theScroll
         end if
       end if
@@ -174,18 +174,28 @@ on rawKeyDown pKeyNum
         DeleteFieldEditor true, "close control"
       else
         if the visible of scrollbar "dvVScrollbar" of me or the viewProp["scroll when vScrollbar is hidden"] of me then
-          put the viewProp["content window height"] of me into theAvailHeight
-          put round(theAvailHeight * .1) into theScroll
+          put the viewProp["content window height"] of me into theAvailDistance
+          put round(theAvailDistance * .1) into theScroll
           set the viewProp["vscroll"] of me to round(the thumbPosition of scrollbar "dvVScrollbar" of me) + theScroll
         end if
       end if
       break
     case "65310"
       ## mouse wheel right
-      -- nothing
+      if the hscrollbar of group "dvListMask" of me then
+        put the viewProp["content width"] of me into theAvailDistance
+        put round(theAvailDistance * .1) into theScroll
+        set hscroll of group "dvListMask" of me to round(the hscroll of group "dvListMask" of me) + theScroll
+      end if
+      break
     case "65311"
       ## mouse wheel left
-      -- nothing
+      if the hscrollbar of group "dvListMask" of me then
+        put the viewProp["content width"] of me into theAvailDistance
+        put round(theAvailDistance * .1) into theScroll
+        set hscroll of group "dvListMask" of me to round(the hscroll of group "dvListMask" of me) - theScroll
+      end if
+      break
     default
       pass rawKeyDown
   end SWITCH
