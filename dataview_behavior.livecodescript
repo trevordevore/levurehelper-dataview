@@ -4809,7 +4809,9 @@ private command _createDragImageFromControl pControl
   set the dvHilite of pControl to false
   if there is a control "Background" of pControl then set the visible of control "Background" of pControl to false
 
+  dispatch "PreDragImageSnapshot" to pControl
   export snapshot from pControl to image "dvDragImage" of me as PNG
+  dispatch "PostDragImageSnapshot" to pControl
 
   set the dvHilite of pControl to isHilited
   if there is a control "Background" of pControl then set the visible of control "Background" of pControl to true
