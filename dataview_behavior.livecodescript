@@ -2550,36 +2550,46 @@ Returns: empty
 */
 private command _hiliteControl pControlId, pBoolean
   local tRow, tColor
+  local msgsAreLocked, tIsHilited
 
-  if there is a control "Background" of control id pControlId then
-    if pBoolean then
-      put _getHiliteColor() into tColor
+  put the lockMessages into msgsAreLocked
+
+  lock messages
+  put the dvHiliteState of control id pControlId into tIsHilited
+  if tIsHilited is not pBoolean then
+    # Store as prop of control
+    set the dvHiliteState of control id pControlId to pBoolean
+  end if
+  unlock messages
+
+  if tIsHilited is not pBoolean then
+    if there is a control "Background" of control id pControlId then
+      if pBoolean then
+        put _getHiliteColor() into tColor
+      else
+        set the wholeMatches to true
+        put the dvRow of control id pControlId into tRow
+        if tRow mod 2 is kAlternatingRowModValue then
+          put _getEffectiveColor("alternate row color") into tColor
+        else
+          put _getEffectiveColor("row color") into tColor
+        end if
+      end if
+
+      if the backgroundColor of control "Background" of control id pControlId is not tColor then
+        set the backgroundColor of control "Background" of control id pControlId to tColor
+      end if
     else
-      set the wholeMatches to true
-      put the dvRow of control id pControlId into tRow
-      if tRow mod 2 is kAlternatingRowModValue then
-        put _getEffectiveColor("alternate row color") into tColor
+      if pBoolean then
+        put _getHiliteColor() into tColor
       else
         put _getEffectiveColor("row color") into tColor
       end if
     end if
 
-    if the backgroundColor of control "Background" of control id pControlId is not tColor then
-      set the backgroundColor of control "Background" of control id pControlId to tColor
-    end if
-  else
-    if pBoolean then
-      put _getHiliteColor() into tColor
-    else
-      put _getEffectiveColor("row color") into tColor
-    end if
+    set the dvHilite [tColor] of control id pControlId to pBoolean
   end if
 
-  local msgsAreLocked
-
-  put the lockMessages into msgsAreLocked
-  unlock messages
-  set the dvHilite [tColor] of control id pControlId to pBoolean
   set the lockMessages to msgsAreLocked
 
   return empty
@@ -3000,6 +3010,13 @@ private command _moveControlIntoUnusedCachePool pCacheKey, pRow
       put tControlId into \
             line (the number of lines of sViewPropsA["controls"]["available"] + 1) of sViewPropsA["controls"]["available"]
     end if
+
+    # Reset the dvHiliteState of the control so that dvHilite is initialized next time control is used.
+    local msgsAreLocked
+    put the lockMessages into msgsAreLocked
+    lock messages
+    set the dvHiliteState of control id tControlId to empty
+    unlock messages
   end if
 
   delete local sViewPropsA["controls"]["cache"][pCacheKey]
