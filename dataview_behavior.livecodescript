@@ -2549,27 +2549,29 @@ pBoolean: Whether or not to turn hilite on.
 Returns: empty
 */
 private command _hiliteControl pControlId, pBoolean
-  local theRow, theColor
+  local tRow, tColor
 
   if there is a control "Background" of control id pControlId then
     if pBoolean then
-      set the backgroundColor of control "Background" of control id pControlId to _getHiliteColor()
+      put _getHiliteColor() into tColor
     else
       set the wholeMatches to true
-      put the dvRow of control id pControlId into theRow
-      if theRow mod 2 is kAlternatingRowModValue then
-        set the backgroundColor of control "Background" of control id pControlId to _getEffectiveColor("alternate row color")
+      put the dvRow of control id pControlId into tRow
+      if tRow mod 2 is kAlternatingRowModValue then
+        put _getEffectiveColor("alternate row color") into tColor
       else
-        set the backgroundColor of control "Background" of control id pControlId to _getEffectiveColor("row color")
+        put _getEffectiveColor("row color") into tColor
       end if
     end if
 
-    put the backgroundColor of control "Background" of control id pControlId into theColor
+    if the backgroundColor of control "Background" of control id pControlId is not tColor then
+      set the backgroundColor of control "Background" of control id pControlId to tColor
+    end if
   else
     if pBoolean then
-      put _getHiliteColor() into theColor
+      put _getHiliteColor() into tColor
     else
-      put _getEffectiveColor("row color") into theColor
+      put _getEffectiveColor("row color") into tColor
     end if
   end if
 
@@ -2577,7 +2579,7 @@ private command _hiliteControl pControlId, pBoolean
 
   put the lockMessages into msgsAreLocked
   unlock messages
-  set the dvHilite [theColor] of control id pControlId to pBoolean
+  set the dvHilite [tColor] of control id pControlId to pBoolean
   set the lockMessages to msgsAreLocked
 
   return empty
