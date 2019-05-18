@@ -1982,7 +1982,7 @@ setProp dvRowIsDirty[pRow] pIsDirty
   local tControlId
 
   put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["control"] into tControlId
-  if there is a tControlId then
+  if there is a control id tControlId then
     lock messages
     set the dvIsDirty of control id tControlId to pIsDirty is true
     unlock messages
