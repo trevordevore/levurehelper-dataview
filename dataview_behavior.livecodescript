@@ -3106,6 +3106,15 @@ private command _setVScroll pValue
   local msgsAreLocked, refocusOnMe, theSelectedChunk, theOrigThumb
   local refocusOnFieldEditor = "false"
 
+  ## Should we enable this for Lion as well?
+  if the environment is not "mobile" then
+    put max(0, min(pValue, the viewProp["content height"] of me - _getContentWindowHeight())) into pValue
+  end if
+
+  lock messages
+  if pValue is the viewProp["vscroll"] of me then return empty
+  unlock messages
+
   ## First set the vscroll and draw
   put the long id of me is in the focusedObject into refocusOnMe
   put the lockMessages into msgsAreLocked
@@ -3121,11 +3130,6 @@ private command _setVScroll pValue
   if refocusOnFieldEditor then
     lock messages
     focus on nothing
-  end if
-
-  ## Should we enable this for Lion as well?
-  if the environment is not "mobile" then
-    put max(0, min(pValue, the viewProp["content height"] of me - _getContentWindowHeight())) into pValue
   end if
 
   lock messages
