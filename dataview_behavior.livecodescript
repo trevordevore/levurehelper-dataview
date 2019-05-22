@@ -360,10 +360,10 @@ command ResetView
 
   # Cleanup rows, sending messages
   repeat for each key theKey in sViewPropsA["controls"]["cache"]
-    if there is not a sViewPropsA["controls"]["cache"][theKey]["control"] then next repeat
+    if there is not a control id sViewPropsA["controls"]["cache"][theKey]["control"] then next repeat
 
-    dispatch "CleanupAfterRowControl" to sViewPropsA["controls"]["cache"][theKey]["control"]
-    delete sViewPropsA["controls"]["cache"][theKey]["control"]
+    dispatch "CleanupAfterRowControl" to control id sViewPropsA["controls"]["cache"][theKey]["control"]
+    delete control id sViewPropsA["controls"]["cache"][theKey]["control"]
   end repeat
 
   # This will clean up any stragglers
@@ -442,7 +442,7 @@ Returns: empty
 */
 command RenderRows pRows
   local theRow, theIndex
-  local theDataA, theControl, theStyle, theTopLeft
+  local theDataA, theControlId, theStyle, theTopLeft
   local updateTheScrollbars = "false"
   local msgsAreLocked, theRowWidth, theCacheKey
 
@@ -462,37 +462,37 @@ command RenderRows pRows
     dispatch "DataForRow" to me with theRow, theDataA, theStyle ## style is ignored for a refresh (dispatch forces target)
 
     put _dispatchCacheKeyForRow(theRow) into theCacheKey # don't use cached key
-    put sViewPropsA["controls"]["cache"][theCacheKey]["control"] into theControl
+    put sViewPropsA["controls"]["cache"][theCacheKey]["control"] into theControlId
 
-    if theControl is not empty then
-      if the dvTemplateStyle of theControl is not theStyle then
+    if theControlId is not empty then
+      if the dvTemplateStyle of control id theControlId is not theStyle then
         # Control isn't valid for row type. Move back into cache and get a new control
-        put the topleft of theControl into theTopLeft
+        put the topleft of control id theControlId into theTopLeft
 
-        _cleanupControl theCacheKey, theRow, theControl, true
+        _cleanupControl theCacheKey, theRow, theControlId, true
 
         _setupRowControl theRow, empty, true
-        put the result into theControl
-        set the topleft of theControl to theTopLeft
+        put the result into theControlId
+        set the topleft of control id theControlId to theTopLeft
       else
         # Reset data array each time through loop
         put empty into theStyle
 
         ## Since we are rendering from scratch dvControlHasBeenRendered should return false during the next two messages
         lock messages
-        set the dvDataCache of theControl to empty
+        set the dvDataCache of control id theControlId to empty
         unlock messages
 
         ## Implemented by instance of behavior
 
-        dispatch "FillInData" to theControl with theDataA, theRow
+        dispatch "FillInData" to control id theControlId with theDataA, theRow
 
         lock messages
-        set the dvDataCache of theControl to NULL
+        set the dvDataCache of control id theControlId to NULL
         unlock messages
       end if
 
-      _dispatchLayoutControl theControl, theRow, theRowWidth, true
+      _dispatchLayoutControl theControlId, theRow, theRowWidth, true
       put true into updateTheScrollbars
     else if the viewProp["cache"] of me is "none" and not the viewProp["fixed row height"] of me then
       ## Control isn't visible on screen. NULL the height so it's new height is taken into account next time it is rendered.
@@ -565,7 +565,7 @@ command RenderVisibleRows
   local forceFillInData = "true"
 
   if theStartRow > 0 then
-    local theTopLeft, theRowControl
+    local theTopLeft, tControlId
 
     put the topleft of group "dvListMask" of me into theTopLeft
     subtract theStartRowYOffset from item 2 of theTopLeft
@@ -578,38 +578,38 @@ command RenderVisibleRows
       ## "rows in use"
 
       ## Is there a cached control for this row?
-      put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(theRow)]["control"] into theRowControl
+      put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(theRow)]["control"] into tControlId
 
       ## No control? Get data and get one.
-      if theRowControl is empty then
+      if tControlId is empty then
         _setupRowControl theRow, empty, forceFillInData
-        put the result into theRowControl
-        if theRowControl is empty then exit repeat
+        put the result into tControlId
+        if tControlId is empty then exit repeat
 
-        set the topleft of theRowControl to theTopLeft
+        set the topleft of control id tControlId to theTopLeft
         # Don't update height. We only get here if caching is off. Heights have already been determined previously.
-        _dispatchLayoutControl theRowControl, theRow, theRowWidth, false
+        _dispatchLayoutControl tControlId, theRow, theRowWidth, false
       else
-        _prepareRowForDisplay theRow, theRowControl, theRowWidth, theTopLeft
+        _prepareRowForDisplay theRow, tControlId, theRowWidth, theTopLeft
       end if
 
-      if not the visible of theRowControl then
+      if not the visible of control id tControlId then
         # Send message to control telling it that it is being displayed
-        dispatch "ShowRowControl" to theRowControl
-        set the visible of theRowControl to true
+        dispatch "ShowRowControl" to control id tControlId
+        set the visible of control id tControlId to true
       end if
 
       if theRow is among the items of sViewPropsA["hilited rows"] then
-        _hiliteControl theRowControl, true
+        _hiliteControl tControlId, true
       else
-        _hiliteControl theRowControl, false
+        _hiliteControl tControlId, false
       end if
 
-      put the bottom of theRowControl into item 2 of theTopLeft
+      put the bottom of control id tControlId into item 2 of theTopLeft
 
       # relayer row control so that tabbing through controls works as expected.
       lock messages
-      relayer theRowControl to front of group "dvList" of me
+      relayer control id tControlId to front of group "dvList" of me
       unlock messages
     end repeat
   end if ## startrow > 0
@@ -1646,11 +1646,11 @@ pRows: The row(s) to use as the dragImage.
 Returns: Error message
 */
 setprop dvDragImageRow pRows
-  local theControl
+  local tControlId
 
-  put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(item 1 of pRows)]["control"] into theControl
-  if theControl is not empty then
-    _createDragImageFromControl theControl
+  put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(item 1 of pRows)]["control"] into tControlId
+  if tControlId is not empty then
+    _createDragImageFromControl tControlId
     return empty
   else
     return "row control not found"
@@ -1953,19 +1953,23 @@ This may return empty if the row is not visible and caching is not turned on.
 Returns: Control reference
 */
 getProp dvControlOfRow [pRow]
-  return sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["control"]
+  if sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["control"] is not empty then
+    return the long id of control id sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["control"]
+  else
+    return empty
+  end if
 end dvControlOfRow
 
 
 getProp dvRowIsDirty[pRow]
-  local tControl
+  local tControlId
 
-  put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["control"] into tControl
-  if there is a tControl then
+  put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["control"] into tControlId
+  if there is a control id tControlId then
     local tValue
 
     lock messages
-    put the dvIsDirty of tControl into tValue
+    put the dvIsDirty of control id tControlId into tValue
     unlock messages
     return tValue
   else
@@ -1975,12 +1979,12 @@ end dvRowIsDirty
 
 
 setProp dvRowIsDirty[pRow] pIsDirty
-  local tControl
+  local tControlId
 
-  put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["control"] into tControl
-  if there is a tControl then
+  put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["control"] into tControlId
+  if there is a control id tControlId then
     lock messages
-    set the dvIsDirty of tControl to pIsDirty is true
+    set the dvIsDirty of control id tControlId to pIsDirty is true
     unlock messages
   end if
 end dvRowIsDirty
@@ -2019,14 +2023,14 @@ or not the control has been rendered.
 Returns: CR delimited list of controls
 */
 getProp dvRowControls
-  local theControls
+  local tControls
 
   repeat for each key theKey in sViewPropsA["controls"]["cache"]
-    put sViewPropsA["controls"]["cache"][theKey]["control"] & cr after theControls
+    put the long id of control id sViewPropsA["controls"]["cache"][theKey]["control"] & cr after tControls
   end repeat
-  delete the last char of theControls
+  delete the last char of tControls
 
-  return theControls
+  return tControls
 end dvRowControls
 
 
@@ -2539,41 +2543,53 @@ end _hiliteRowsInVisibleControls
 Summary: Turns the hilite for a control on/off.
 
 Parameters:
-pControl: Control reference.
+pControlId: Id of control.
 pBoolean: Whether or not to turn hilite on.
 
 Returns: empty
 */
-private command _hiliteControl pControl, pBoolean
-  local theRow, theColor
+private command _hiliteControl pControlId, pBoolean
+  local tRow, tColor
+  local msgsAreLocked, tIsHilited
 
-  if there is a control "Background" of pControl then
-    if pBoolean then
-      set the backgroundColor of control "Background" of pControl to _getHiliteColor()
-    else
-      set the wholeMatches to true
-      put the dvRow of pControl into theRow
-      if theRow mod 2 is kAlternatingRowModValue then
-        set the backgroundColor of control "Background" of pControl to _getEffectiveColor("alternate row color")
+  put the lockMessages into msgsAreLocked
+
+  lock messages
+  put the dvHiliteState of control id pControlId into tIsHilited
+  if tIsHilited is not pBoolean then
+    # Store as prop of control
+    set the dvHiliteState of control id pControlId to pBoolean
+  end if
+  unlock messages
+
+  if tIsHilited is not pBoolean then
+    if there is a control "Background" of control id pControlId then
+      if pBoolean then
+        put _getHiliteColor() into tColor
       else
-        set the backgroundColor of control "Background" of pControl to _getEffectiveColor("row color")
+        set the wholeMatches to true
+        put the dvRow of control id pControlId into tRow
+        if tRow mod 2 is kAlternatingRowModValue then
+          put _getEffectiveColor("alternate row color") into tColor
+        else
+          put _getEffectiveColor("row color") into tColor
+        end if
+      end if
+
+      if the backgroundColor of control "Background" of control id pControlId is not tColor then
+        set the backgroundColor of control "Background" of control id pControlId to tColor
+      end if
+    else
+      if pBoolean then
+        put _getHiliteColor() into tColor
+      else
+        put _getEffectiveColor("row color") into tColor
       end if
     end if
 
-    put the backgroundColor of control "Background" of pControl into theColor
-  else
-    if pBoolean then
-      put _getHiliteColor() into theColor
-    else
-      put _getEffectiveColor("row color") into theColor
-    end if
+    set the dvHilite [tColor] of control id pControlId to pBoolean
   end if
 
-  local msgsAreLocked
-
-  put the lockMessages into msgsAreLocked
-  unlock messages
-  set the dvHilite [theColor] of pControl to pBoolean
   set the lockMessages to msgsAreLocked
 
   return empty
@@ -2904,23 +2920,23 @@ end _initializeHeightsForVariableSizedRows
 /**
 Summary: Handles cleanup of a control based on cache setting.
 */
-private command _cleanupControl pCacheKey, pRow, pControl, pDeleteInTime
+private command _cleanupControl pCacheKey, pRow, pControlId, pDeleteInTime
   if the viewProp["cache"] of me is not among the items of "eager,lazy" then
     _moveControlIntoUnusedCachePool pCacheKey, pRow # this sends cleanup message
   else
     # Send message to control telling it to clean up after itself
-    if there is a pControl then
-      dispatch "CleanupAfterRowControl" to pControl
+    if there is a control id pControlId then
+      dispatch "CleanupAfterRowControl" to control id pControlId
 
       lock messages
-      if the long id of pControl is in the focusedObject then
+      if the long id of control id pControlId is in the focusedObject then
         focus on graphic "dvBackground" of me ## engine doesn't like the focused control in a group being deleted
       end if
 
       if not pDeleteInTime then
-        delete pControl
+        delete control id pControlId
       else
-        send "__deleteRowControl pControl" to me in 0 seconds
+        send "__deleteRowControl pControlId" to me in 0 seconds
       end if
       unlock messages
     end if
@@ -2979,21 +2995,28 @@ pRow: Pass in the row to dissassociate the row with the the cache key.
 Returns: empty
 */
 private command _moveControlIntoUnusedCachePool pCacheKey, pRow
-  local theControl, theItemNo, removeFromCache
+  local tControlId, theItemNo, removeFromCache
 
-  put sViewPropsA["controls"]["cache"][pCacheKey]["control"] into theControl
-  if there is a theControl then
-    dispatch "HideRowControl" to theControl
-    set the visible of theControl to false
+  put sViewPropsA["controls"]["cache"][pCacheKey]["control"] into tControlId
+  if there is a control id tControlId then
+    dispatch "HideRowControl" to control id tControlId
+    set the visible of control id tControlId to false
 
     # Send message to control telling it to clean up after itself
-    dispatch "CleanupAfterRowControl" to theControl
+    dispatch "CleanupAfterRowControl" to control id tControlId
 
     ## Move back into pool of available controls
     if the viewProp["cache"] of me is "none" then
-      put theControl into \
+      put tControlId into \
             line (the number of lines of sViewPropsA["controls"]["available"] + 1) of sViewPropsA["controls"]["available"]
     end if
+
+    # Reset the dvHiliteState of the control so that dvHilite is initialized next time control is used.
+    local msgsAreLocked
+    put the lockMessages into msgsAreLocked
+    lock messages
+    set the dvHiliteState of control id tControlId to empty
+    unlock messages
   end if
 
   delete local sViewPropsA["controls"]["cache"][pCacheKey]
@@ -3083,6 +3106,15 @@ private command _setVScroll pValue
   local msgsAreLocked, refocusOnMe, theSelectedChunk, theOrigThumb
   local refocusOnFieldEditor = "false"
 
+  ## Should we enable this for Lion as well?
+  if the environment is not "mobile" then
+    put max(0, min(pValue, the viewProp["content height"] of me - _getContentWindowHeight())) into pValue
+  end if
+
+  lock messages
+  if pValue is the viewProp["vscroll"] of me then return empty
+  unlock messages
+
   ## First set the vscroll and draw
   put the long id of me is in the focusedObject into refocusOnMe
   put the lockMessages into msgsAreLocked
@@ -3098,11 +3130,6 @@ private command _setVScroll pValue
   if refocusOnFieldEditor then
     lock messages
     focus on nothing
-  end if
-
-  ## Should we enable this for Lion as well?
-  if the environment is not "mobile" then
-    put max(0, min(pValue, the viewProp["content height"] of me - _getContentWindowHeight())) into pValue
   end if
 
   lock messages
@@ -3286,50 +3313,50 @@ Summary: Looks to see if a control needs to be filled in with data (ghost contro
 
 Parameters:
 pRow: The row number of the control.
-pRowControl: Reference to the row control.
+pRowControlId: The id of the row control.
 pRowWidth: The width to assign to the row if it must be resized.
 pTopLeft: Optional point to set the topleft of the control to.
 
 Returns: Boolean. True if control was updated. False otherwise.
 */
-private command _prepareRowForDisplay pRow, pRowControl, pRowWidth, pTopLeft
+private command _prepareRowForDisplay pRow, pRowControlId, pRowWidth, pTopLeft
   local controlWasUpdated = "false"
   local msgsAreLocked
 
   ## Always update
   put the lockMessages into msgsAreLocked
   lock messages
-  if pTopLeft is a point then set the topleft of pRowControl to pTopLeft
-  set the dvRow of pRowControl to pRow
+  if pTopLeft is a point then set the topleft of control id pRowControlId to pTopLeft
+  set the dvRow of control id pRowControlId to pRow
 
-  if the dvDataCache of pRowControl is not NULL then
+  if the dvDataCache of control id pRowControlId is not NULL then
     local theDataA
 
     ## Ghost control
-    put the dvDataCache of pRowControl into theDataA
+    put the dvDataCache of control id pRowControlId into theDataA
     unlock messages
-    dispatch "FillInData" to pRowControl with theDataA, pRow
+    dispatch "FillInData" to control id pRowControlId with theDataA, pRow
 
     lock messages
-    set the dvDataCache of pRowControl to NULL
+    set the dvDataCache of control id pRowControlId to NULL
     unlock messages
-    _dispatchLayoutControl pRowControl, pRow, pRowWidth, true
+    _dispatchLayoutControl pRowControlId, pRow, pRowWidth, true
     put true into controlWasUpdated
   else
-    if the dvIsDirty of pRowControl then
+    if the dvIsDirty of control id pRowControlId then
       unlock messages
-      _setupRowControl pRow, pRowControl, true
+      _setupRowControl pRow, pRowControlId, true
     end if
 
     ## Regular control
-    if sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["resize"] or the dvIsDirty of pRowControl then
+    if sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["resize"] or the dvIsDirty of control id pRowControlId then
       unlock messages
-      _dispatchLayoutControl pRowControl, pRow, pRowWidth, true
+      _dispatchLayoutControl pRowControlId, pRow, pRowWidth, true
       put true into controlWasUpdated
     end if
 
     lock messages
-    set the dvIsDirty of pRowControl to false
+    set the dvIsDirty of control id pRowControlId to false
     unlock messages
   end if
 
@@ -3473,7 +3500,7 @@ Returns: empty
 */
 private command _cacheControls pRefreshDataInCachedControls
   local theRowCount, theRow
-  local msgsAreLocked, theRowControl
+  local msgsAreLocked, tControlId
 
   put pRefreshDataInCachedControls is not false into pRefreshDataInCachedControls
   put the lockMessages into msgsAreLocked
@@ -3486,24 +3513,24 @@ private command _cacheControls pRefreshDataInCachedControls
   ## Create row controls
   repeat with theRow = 1 to theRowCount
     ## Is there a cached control for this row?
-    put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(theRow)]["control"] into theRowControl
+    put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(theRow)]["control"] into tControlId
 
     # Get out early if not updating data
-    if not pRefreshDataInCachedControls AND theRowControl is not empty then
+    if not pRefreshDataInCachedControls AND tControlId is not empty then
       # control may have a text editor open
-      dispatch "HideRowControl" to theRowControl
-      set the visible of theRowControl to false
+      dispatch "HideRowControl" to control id tControlId
+      set the visible of control id tControlId to false
       next repeat
     end if
 
-    ## If theRowControl is not empty then it will be refreshed with latest data.
+    ## If tControlId is not empty then it will be refreshed with latest data.
     ## If it is empty then a control will be provided.
-    _setupRowControl theRow, theRowControl
-    put the result into theRowControl
+    _setupRowControl theRow, tControlId
+    put the result into tControlId
 
-    if theRowControl is not empty then
-      dispatch "HideRowControl" to theRowControl
-      set the visible of theRowControl to false
+    if tControlId is not empty then
+      dispatch "HideRowControl" to control id tControlId
+      set the visible of control id tControlId to false
     end if
   end repeat
 
@@ -3518,66 +3545,66 @@ Summary: Sets up a control for a row. Data will be filled in or cached with cont
 
 Parameters:
 pRow: Row to set up control for.
-pRowControl: If passed in then used as the row control and data within it is updated. Otherwise one is provided. Passing it in is used when refreshing cached controls with new data.
+pRowControlId: If id is passed in then control used as the row control and data within it is updated. Otherwise one is provided. Passing it in is used when refreshing cached controls with new data.
 pForceFillInData: Pass in true to force FillInData to be sent, even if lazy caching is set. Used if you are definitly about to display the row.
 
 Returns: Control reference
 */
-private command _setupRowControl pRow, pRowControl, pForceFillInData
+private command _setupRowControl pRow, pRowControlId, pForceFillInData
   local theDataA
   local theStyle, cacheTheControl
 
   ## Implemented by instance of behavior
   dispatch "DataForRow" to me with pRow, theDataA, theStyle
-  put pRowControl is empty into cacheTheControl
+  put pRowControlId is empty into cacheTheControl
 
   if theStyle is empty then put "default" into theStyle
 
   # Is style of row changing?
-  if pRowControl is not empty and the dvTemplateStyle of pRowControl is not theStyle then
-    _cleanupControl _getCacheKeyForRow(pRow), pRow, pRowControl, true
-    put empty into pRowControl
+  if pRowControlId is not empty and the dvTemplateStyle of control id pRowControlId is not theStyle then
+    _cleanupControl _getCacheKeyForRow(pRow), pRow, pRowControlId, true
+    put empty into pRowControlId
   end if
 
-  if pRowControl is empty then
-    put _getControlOfStyle(theStyle) into pRowControl
+  if pRowControlId is empty then
+    put _getControlIdOfStyle(theStyle) into pRowControlId
   end if
 
-  if pRowControl is not empty then
+  if pRowControlId is not empty then
     if cacheTheControl then
-      _cacheRowControl pRow, pRowControl
+      _cacheRowControl pRow, pRowControlId
     end if
 
     ## If fixed row height then lock it in
     if the viewProp["fixed row height"] of me then
-      set the height of pRowControl to the viewProp["row height"] of me
+      set the height of control id pRowControlId to the viewProp["row height"] of me
     end if
 
     ## Lock the size
-    set the lockLoc of pRowControl to true
+    set the lockLoc of control id pRowControlId to true
 
     local msgsAreLocked
     put the lockMessages into msgsAreLocked
     lock messages
-    set the dvRow of pRowControl to pRow
-    set the dvTemplateStyle of pRowControl to theStyle
+    set the dvRow of control id pRowControlId to pRow
+    set the dvTemplateStyle of control id pRowControlId to theStyle
     unlock messages
 
     if the viewProp["cache"] of me is not "lazy" OR pForceFillInData then
-      dispatch "FillInData" to pRowControl with theDataA, pRow
+      dispatch "FillInData" to control id pRowControlId with theDataA, pRow
       lock messages
-      set the dvDataCache of pRowControl to NULL
+      set the dvDataCache of control id pRowControlId to NULL
     else ## "lazy"
       ## Just create a "ghost" control.
       ## Store data with control. It will be loaded in later as needed
       lock messages
-      set the dvDataCache of pRowControl to theDataA
+      set the dvDataCache of control id pRowControlId to theDataA
     end if
 
     set the lockMessages to msgsAreLocked
   end if
 
-  return pRowControl
+  return pRowControlId
 end _setupRowControl
 
 
@@ -3642,7 +3669,7 @@ Returns: empty
 */
 private command _resizeControls pStartRow, pEndRow
   if sViewPropsA["controls"]["cache"] is an array then
-    local msgsAreLocked, theWidth, theRowControl, theRow
+    local msgsAreLocked, theWidth, tControlId, theRow
 
     put the lockMessages into msgsAreLocked
     unlock messages
@@ -3653,8 +3680,8 @@ private command _resizeControls pStartRow, pEndRow
     put the viewProp["content width"] of me into theWidth
 
     repeat with theRow = pStartRow to pEndRow
-      put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(theRow)]["control"] into theRowControl
-      _dispatchLayoutControl theRowControl, theRow, theWidth
+      put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(theRow)]["control"] into tControlId
+      _dispatchLayoutControl tControlId, theRow, theWidth
     end repeat
 
     set the lockMessages to msgsAreLocked
@@ -3668,7 +3695,7 @@ end _resizeControls
 Summary: Resizes the width of a control and sends the LayoutControl message. The control will maintain it's current topleft position.
 
 Parameters:
-pRowControl: The control to send the message to.
+pRowControlId: The id of the control to send the message to.
 pRow: The row of the control.
 pWidth: The width to set pRowControl to.
 pUpdateContentHeight: Pass in true to update the `content height` after calling `LayoutControl`. This is only applicable if `fixed row height` is false.
@@ -3678,7 +3705,7 @@ The LayoutControl handler is responsible for setting the proper height of the ro
 
 Returns: empty
 */
-private command _dispatchLayoutControl pRowControl, pRow, pWidth, pUpdateContentHeight
+private command _dispatchLayoutControl pRowControlId, pRow, pWidth, pUpdateContentHeight
   local theRect, theVScroll, theIndex, theCacheKey, theResult
   local theHeight, msgsAreLocked
 
@@ -3686,32 +3713,32 @@ private command _dispatchLayoutControl pRowControl, pRow, pWidth, pUpdateContent
 
   put the lockMessages into msgsAreLocked
   lock messages
-  put the rect of pRowControl into theRect
+  put the rect of control id pRowControlId into theRect
   put item 1 of theRect + pWidth into item 3 of theRect
-  set the rect of pRowControl to theRect
+  set the rect of control id pRowControlId to theRect
   unlock messages
 
   put _getCacheKeyForRow(pRow) into theCacheKey
 
-  set the lockUpdates of pRowControl to kLockUpdatesSetting
-  dispatch "LayoutControl" to pRowControl with theRect, pRow
+  set the lockUpdates of control id pRowControlId to kLockUpdatesSetting
+  dispatch "LayoutControl" to control id pRowControlId with theRect, pRow
   put the result into theResult
   put false into sViewPropsA["controls"]["cache"][theCacheKey]["resize"]
-  set the lockUpdates of pRowControl to false
+  set the lockUpdates of control id pRowControlId to false
 
   if not the viewProp["fixed row height"] of me AND theResult is not "do not resize" then
     ## When we set up control we locked the height. We need to update the height now.
     local tBorderWidth = 0
-    if the showBorder of pRowControl then
-      put the borderWidth of pRowControl into tBorderWidth
+    if the showBorder of control id pRowControlId then
+      put the borderWidth of control id pRowControlId into tBorderWidth
     end if
 
-    put the rect of pRowControl into theRect
-    put item 2 of theRect + the formattedHeight of pRowControl - tBorderWidth into item 4 of theRect
-    set the rect of pRowControl to theRect
+    put the rect of control id pRowControlId into theRect
+    put item 2 of theRect + the formattedHeight of control id pRowControlId - tBorderWidth into item 4 of theRect
+    set the rect of control id pRowControlId to theRect
     put item 4 of theRect - item 2 of theRect into theHeight
   else
-    put the height of pRowControl into theHeight
+    put the height of control id pRowControlId into theHeight
   end if
 
   if pUpdateContentHeight then
@@ -3776,29 +3803,29 @@ Summary: Stores a control in the cache for a row, removing the control from the 
 
 Parameters:
 pRow: The row to cache the control for.
-pControl: The control to cache.
+pControlId: The id of the control to cache.
 
 Returns: empty
 */
-private command _cacheRowControl pRow, pControl
+private command _cacheRowControl pRow, pControlId
   local theLineNo, i, theCacheKey, theOffsetRow
 
   set the wholeMatches to true
 
   put _dispatchCacheKeyForRow(pRow) into theCacheKey
 
-  put lineoffset(pControl, sViewPropsA["controls"]["available"]) into theLineNo
+  put lineoffset(pControlId, sViewPropsA["controls"]["available"]) into theLineNo
   if theLineNo > 0 then
     delete line theLineNo of sViewPropsA["controls"]["available"]
     if sViewPropsA["controls"]["available"] is empty then
       delete local sViewPropsA["controls"]["available"]
     end if
   else
-    if sViewPropsA["controls"]["available"] contains pControl then
+    if sViewPropsA["controls"]["available"] contains pControlId then
       breakpoint
-      put lineoffset(pControl, sViewPropsA["controls"]["available"]) into theLineNo
+      put lineoffset(pControlId, sViewPropsA["controls"]["available"]) into theLineNo
       --         local theData
-      --         put "pControl:" && pControl & cr & cr after theData
+      --         put "pControlId:" && pControlId & cr & cr after theData
       --         repeat for each line theLine in sViewPropsA["controls"]["available"]
       --            put quote & theLine & quote & cr & cr after theData
       --         end repeat
@@ -3808,9 +3835,9 @@ private command _cacheRowControl pRow, pControl
   end if
 
   ## Store control in cache
-  put pControl into sViewPropsA["controls"]["cache"][theCacheKey]["control"]
+  put pControlId into sViewPropsA["controls"]["cache"][theCacheKey]["control"]
   put true into sViewPropsA["controls"]["cache"][theCacheKey]["resize"]
-  put the height of pControl into sViewPropsA["controls"]["cache"][theCacheKey]["height"]
+  put the height of control id pControlId into sViewPropsA["controls"]["cache"][theCacheKey]["height"]
 
   # if caching is not on and no fixed row height then store height in lookup table
   if "control height cache" is among the keys of sViewPropsA["controls"] then
@@ -4100,7 +4127,7 @@ hidden.
 Returns: empty
 */
 private command _updateControlCacheForActiveRange pStartRow, pEndRow
-  local theCacheSetting, theCacheKey, theCacheKeys, theRow, theRowControl
+  local theCacheSetting, theCacheKey, theCacheKeys, theRow, tControlId
   local theRowIndexA
 
   set the wholeMatches to true
@@ -4153,17 +4180,17 @@ private command _updateControlCacheForActiveRange pStartRow, pEndRow
       # Out of range
       if theRow < pStartRow or theRow > pEndRow then
 
-        put sViewPropsA["controls"]["cache"][theCacheKey]["control"] into theRowControl
+        put sViewPropsA["controls"]["cache"][theCacheKey]["control"] into tControlId
 
         try
-          if the visible of theRowControl then
+          if the visible of control id tControlId then
             # control may have a text editor open
             # 2016-08-03: Tried to use this method to keep controls visible that have field open.
             #             Field that is open but off screen doesn't seem to get exit/closefield messages though.
-            --                  if not FieldEditorIsOpen(theRowControl) then
+            --                  if not FieldEditorIsOpen(the long id of control id tControlId) then
             # Send message if control will maintain current data
-            dispatch "HideRowControl" to theRowControl
-            hide theRowControl
+            dispatch "HideRowControl" to control id tControlId
+            hide control id tControlId
             --               end if
           end if
         catch e
@@ -4199,12 +4226,12 @@ Otherwise a new control will be created.
 
 Returns: Control reference.
 */
-private function _getControlOfStyle pStyle
-  local theControl
+private function _getControlIdOfStyle pStyle
+  local tControlId
 
-  put _findAvailableControlOfStyle(pStyle) into theControl
+  put _findAvailableControlOfStyle(pStyle) into tControlId
 
-  if theControl is empty then
+  if tControlId is empty then
     local theTemplatesA, theTemplate
 
     put the viewProp["row style templates"] of me into theTemplatesA
@@ -4216,17 +4243,17 @@ private function _getControlOfStyle pStyle
       put the lockMessages into msgsAreLocked
       lock messages
       copy theTemplate to group "dvList" of me
-      put _customControlReference(it) into theControl
+      put the short id of it into tControlId
 
       ## Make sure a style is set
-      set dvTemplateStyle of theControl to pStyle
+      set dvTemplateStyle of control id tControlId to pStyle
 
       set the lockMessages to msgsAreLocked
     end if
   end if
 
-  return theControl
-end _getControlOfStyle
+  return tControlId
+end _getControlIdOfStyle
 
 
 /**
@@ -4517,9 +4544,9 @@ private command _positionDropIndicator pMouseH, pMouseV
   local theWindowRect
   local theHeight
   local theSequence
-  local theStartControl # The top control that defines the drop region
-  local theEndControl # The bottom control that defines the drop region
-  local theTargetControl
+  local tStartControlId # The top control that defines the drop region
+  local tEndControlId # The bottom control that defines the drop region
+  local tTargetControlId
 
   put the lockMessages into msgsAreLocked
   set the wholeMatches to true
@@ -4536,30 +4563,30 @@ private command _positionDropIndicator pMouseH, pMouseV
       else
         local theTargetRow
 
-        put the dvRowControl of the mouseControl into theTargetControl
+        put the short id of the dvRowControl of the mouseControl into tTargetControlId
 
-        if theTargetControl is empty then
+        if tTargetControlId is empty then
           if pMouseV <= (item 2 of theWindowRect + the viewProp["content top padding"] of me + 1) then
             # top padding area. Use first control.
-            put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(item 1 of sViewPropsA["controls"]["rows in use"])]["control"] into theTargetControl
+            put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(item 1 of sViewPropsA["controls"]["rows in use"])]["control"] into tTargetControlId
           else
             ## Assume we are below the last control
-            put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(item -1 of sViewPropsA["controls"]["rows in use"])]["control"] into theTargetControl
+            put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(item -1 of sViewPropsA["controls"]["rows in use"])]["control"] into tTargetControlId
           end if
         end if
 
-        if theTargetControl is empty then
+        if tTargetControlId is empty then
           put the dvAcceptsDrop of me is not false into showDropIndicator
           put 0 into sDropStructure["dropped after row"] ## no controls in list
         else
           local theItemNo
 
-          put the dvRow of theTargetControl into theTargetRow
+          put the dvRow of control id tTargetControlId into theTargetRow
 
           ## Look for next/prev control that is not filtered out
           ## Direction we look depends on position of mouse
           ## relative to Y of control
-          put item 2 of the loc of theTargetControl into theY
+          put item 2 of the loc of control id tTargetControlId into theY
 
           ## dvAcceptsDrop returns an array with "above" and "below" keys.
           ## "none" means no drop should occur at all in that direction and searching stops.
@@ -4568,15 +4595,15 @@ private command _positionDropIndicator pMouseH, pMouseV
           ## Look for start/end controls in our drop
           local acceptsADrop, theStartAcceptsADrop, theEndAcceptsADrop
 
-          put the dvAcceptsDrop of theTargetControl into theStartAcceptsADrop
+          put the dvAcceptsDrop of control id tTargetControlId into theStartAcceptsADrop
 
           ## Fill in some values if we already know what they are
           if theStartAcceptsADrop["above"] is true then
-            put theTargetControl into theStartControl
+            put tTargetControlId into tStartControlId
           end if
 
           if theStartAcceptsADrop["below"] is true then
-            put theTargetControl into theEndControl
+            put tTargetControlId into tEndControlId
             put theStartAcceptsADrop into theEndAcceptsADrop
           end if
 
@@ -4587,7 +4614,7 @@ private command _positionDropIndicator pMouseH, pMouseV
           ## Now search for any missing values.
           ## Look for next control that accepts a drop
           ## Note that no search appears if the start control stopped all action below.
-          if theEndControl is empty then
+          if tEndControlId is empty then
             if theStartAcceptsADrop["below"] is not "none" then
               put item (theItemNo + 1) to -1 of sViewPropsA["controls"]["rows in use"] into theRowsToCheck
               repeat for each item theRow in theRowsToCheck
@@ -4599,7 +4626,7 @@ private command _positionDropIndicator pMouseH, pMouseV
                   exit repeat
                 else if acceptsADrop["above"] is true OR acceptsADrop["below"] is true then
                   put acceptsADrop into theEndAcceptsADrop
-                  put sViewPropsA["controls"]["cache"][theCacheKey]["control"] into theEndControl
+                  put sViewPropsA["controls"]["cache"][theCacheKey]["control"] into tEndControlId
                   exit repeat
                 end if
               end repeat
@@ -4608,7 +4635,7 @@ private command _positionDropIndicator pMouseH, pMouseV
 
           ## Look for preceding control that accepts a drop
           ## Note that no search appears if the start control stopped all action above.
-          if theStartControl is empty then
+          if tStartControlId is empty then
             if theStartAcceptsADrop["above"] is not "none" then
               put item 1 to (theItemNo - 1) of sViewPropsA["controls"]["rows in use"] into theRowsToCheck
 
@@ -4624,7 +4651,7 @@ private command _positionDropIndicator pMouseH, pMouseV
                   exit repeat
                 else if acceptsADrop["above"] is true OR acceptsADrop["below"] is true then
                   put acceptsADrop into theStartAcceptsADrop
-                  put sViewPropsA["controls"]["cache"][theCacheKey]["control"] into theStartControl
+                  put sViewPropsA["controls"]["cache"][theCacheKey]["control"] into tStartControlId
                   exit repeat
                 end if
               end repeat
@@ -4632,38 +4659,38 @@ private command _positionDropIndicator pMouseH, pMouseV
           end if
 
           ## What is height of drop area as defined by start/end controls?
-          --               put "is:" && theStartControl & cr & theEndControl
-          if theStartControl is empty and theEndControl is empty then
+          --               put "is:" && theStartControl & cr & tEndControlId
+          if tStartControlId is empty and tEndControlId is empty then
             ## No drop. Hide the drop indicator
             put false into showDropIndicator
           else
-            if theStartControl is empty then put theEndControl into theStartControl
-            else if theEndControl is empty then put theStartControl into theEndControl
+            if tStartControlId is empty then put tEndControlId into tStartControlId
+            else if tEndControlId is empty then put tStartControlId into tEndControlId
 
             # Figure out the drop Y coordinate
-            put the bottom of theEndControl - the top of theStartControl into theHeight
+            put the bottom of control id tEndControlId - the top of control id tStartControlId into theHeight
 
-            if pMouseV < (the top of theStartControl + round(theHeight / 2)) then
+            if pMouseV < (the top of control id tStartControlId + round(theHeight / 2)) then
               # Mouse is in top-half of drop zone
               if theStartAcceptsADrop["above"] is true then
-                put the top of theStartControl into theY
-                put max(the dvRow of theStartControl-1, 0) into sDropStructure["dropped after row"]
+                put the top of control id tStartControlId into theY
+                put max(the dvRow of control id tStartControlId-1, 0) into sDropStructure["dropped after row"]
 
               else if theStartAcceptsADrop["below"] is true then
-                put the bottom of theStartControl into theY
-                put the dvRow of theStartControl into sDropStructure["dropped after row"]
+                put the bottom of control id tStartControlId into theY
+                put the dvRow of control id tStartControlId into sDropStructure["dropped after row"]
               else
                 put false into showDropIndicator
               end if
             else
               # Mouse is in bottom half of drop zone
               if theEndAcceptsADrop["below"] is true then
-                put the bottom of theEndControl into theY
-                put the dvRow of theEndControl into sDropStructure["dropped after row"]
+                put the bottom of control id tEndControlId into theY
+                put the dvRow of control id tEndControlId into sDropStructure["dropped after row"]
 
               else if theEndAcceptsADrop["above"] is true then
-                put the top of theEndControl into theY
-                put max(the dvRow of theEndControl-1, 0) into sDropStructure["dropped after row"]
+                put the top of control id tEndControlId into theY
+                put max(the dvRow of control id tEndControlId-1, 0) into sDropStructure["dropped after row"]
               else
                 put false into showDropIndicator
               end if
@@ -4784,11 +4811,11 @@ end _listGroupDragReorderAutoScroll
 Summary: Sets the dragImage (and associated properties) using an image created from a control.
 
 Parameters:
-pControl: A reference to the control to use as the dragImage.
+pControlId: Id of control to use as the dragImage.
 
 Returns: empty
 */
-private command _createDragImageFromControl pControl
+private command _createDragImageFromControl pControlId
   local theImageOffset, isHilited
 
   lock screen
@@ -4805,20 +4832,20 @@ private command _createDragImageFromControl pControl
   end if
 
   unlock messages
-  put the dvHilite of pControl into isHilited
-  set the dvHilite of pControl to false
-  if there is a control "Background" of pControl then set the visible of control "Background" of pControl to false
+  put the dvHilite of control id pControlId into isHilited
+  set the dvHilite of control id pControlId to false
+  if there is a control "Background" of control id pControlId then set the visible of control "Background" of control id pControlId to false
 
-  dispatch "PreDragImageSnapshot" to pControl
-  export snapshot from pControl to image "dvDragImage" of me as PNG
-  dispatch "PostDragImageSnapshot" to pControl
+  dispatch "PreDragImageSnapshot" to control id pControlId
+  export snapshot from control id pControlId to image "dvDragImage" of me as PNG
+  dispatch "PostDragImageSnapshot" to control id pControlId
 
-  set the dvHilite of pControl to isHilited
-  if there is a control "Background" of pControl then set the visible of control "Background" of pControl to true
+  set the dvHilite of control id pControlId to isHilited
+  if there is a control "Background" of control id pControlId then set the visible of control "Background" of control id pControlId to true
 
   set the dragImage to the ID of image "dvDragImage" of me
-  put the clickH - the left of pControl & comma & \
-        the clickV - the top of pControl into theImageOffset
+  put the clickH - the left of control id pControlId & comma & \
+        the clickV - the top of control id pControlId into theImageOffset
   set the dragImageOffset to theImageOffset
 
   set the lockMessages to msgsAreLocked
@@ -5010,7 +5037,7 @@ command EditKeyOfRow pKey, pRow
   put _getCacheKeyForRow(pRow) into theCacheKey
 
   if sViewPropsA["controls"]["cache"][theCacheKey]["control"] is not empty then
-    dispatch "EditKey" to sViewPropsA["controls"]["cache"][theCacheKey]["control"] with pKey
+    dispatch "EditKey" to control id sViewPropsA["controls"]["cache"][theCacheKey]["control"] with pKey
     unlock screen
     return empty
   else
@@ -5175,7 +5202,7 @@ command CreateFieldEditorForField pField, pKey
   ## All of the scrolling around and unfocusing of controls will leave
   ## the row the field editor is in dimmed out. Explicitly highlight the
   ## row again.
-  _hiliteControl the dvRowControl of sViewPropsA["field editor"]["control"], true
+  _hiliteControl the short id of the dvRowControl of sViewPropsA["field editor"]["control"], true
 
   local theFrontScriptButton
 
