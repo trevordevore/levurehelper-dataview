@@ -2118,7 +2118,6 @@ private command _init
   end switch
 
   _setScrollbarWidth
-  set the viewProp["opaque"] of me to the opaque of me
 
   ResetView
 
