@@ -2595,6 +2595,15 @@ private command _hiliteControl pControlId, pBoolean
 end _hiliteControl
 
 
+private command _resetHiliteSettingOnControl pControlId
+  local msgsAreLocked
+  put the lockmessages into msgsAreLocked
+  lock messages
+  set the dvHiliteState of control id pControlId to empty
+  set the lockmessages to msgsAreLocked
+end _resetHiliteSettingOnControl
+
+
 private function _getHiliteColor
   local theColor
 
@@ -3011,11 +3020,7 @@ private command _moveControlIntoUnusedCachePool pCacheKey, pRow
     end if
 
     # Reset the dvHiliteState of the control so that dvHilite is initialized next time control is used.
-    local msgsAreLocked
-    put the lockMessages into msgsAreLocked
-    lock messages
-    set the dvHiliteState of control id tControlId to empty
-    unlock messages
+    _resetHiliteSettingOnControl tControlId
   end if
 
   delete local sViewPropsA["controls"]["cache"][pCacheKey]
@@ -3587,6 +3592,7 @@ private command _setupRowControl pRow, pRowControlId, pForceFillInData
     lock messages
     set the dvRow of control id pRowControlId to pRow
     set the dvTemplateStyle of control id pRowControlId to theStyle
+    _resetHiliteSettingOnControl pRowControlId
     unlock messages
 
     if the viewProp["cache"] of me is not "lazy" OR pForceFillInData then
@@ -4190,6 +4196,8 @@ private command _updateControlCacheForActiveRange pStartRow, pEndRow
             # Send message if control will maintain current data
             dispatch "HideRowControl" to control id tControlId
             hide control id tControlId
+
+            _resetHiliteSettingOnControl tControlId
             --               end if
           end if
         catch e
