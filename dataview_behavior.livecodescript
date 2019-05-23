@@ -4243,6 +4243,9 @@ private function _getControlIdOfStyle pStyle
       lock messages
       copy theTemplate to group "dvList" of me
       put the short id of it into tControlId
+      if the buildnumber >= 15500 then // 9.5dp-1
+        set the layermode of control id tControlId to "dynamic"
+      end if
 
       ## Make sure a style is set
       set dvTemplateStyle of control id tControlId to pStyle

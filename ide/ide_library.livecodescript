@@ -30,6 +30,12 @@ command dvIdeCreateDataViewControl pName, pTargetCard, pBehavior
   copy group "DataView Template" of stack "DataViewControlTemplate" to pTargetCard
   put it into tControl
   set the name of tControl to pName
+  set the borderwidth of tControl to 0
+  set the showborder of tControl to false
+  set the opaque of tControl to false
+  if the buildnumber >= 15500 then // 9.5dp-1
+    set the layermode of tControl to "container"
+  end if
 
   set the behavior of tControl to pBehavior
 
