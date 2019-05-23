@@ -4267,6 +4267,17 @@ private function _getControlIdOfStyle pStyle
       copy theTemplate to group "dvList" of me
       put the short id of it into tControlId
       if the buildnumber >= 15500 then // 9.5dp-1
+        set the opaque of control id tControlId to false
+        set the showborder of control id tControlId to false
+        set the showname of control id tControlId to false
+        set the hscrollbar of control id tControlId to false
+        set the vscrollbar of control id tControlId to false
+        set the dropShadow of control id tControlId to empty
+        set the innderShadow of control id tControlId to empty
+        set the outerGlow of control id tControlId to empty
+        set the innerGlow of control id tControlId to empty
+        set the colorOverlay of control id tControlId to empty
+
         set the layermode of control id tControlId to "dynamic"
       end if
 
