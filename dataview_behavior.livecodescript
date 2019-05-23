@@ -160,9 +160,14 @@ on rawKeyDown pKeyNum
         DeleteFieldEditor true, "close control"
       else
         if the visible of scrollbar "dvVScrollbar" of me or the viewProp["scroll when vScrollbar is hidden"] of me then
-          put the viewProp["content window height"] of me into theAvailHeight
-          put round(theAvailHeight * .1) into theScroll
-          set the viewProp["vscroll"] of me to round(the thumbPosition of scrollbar "dvVScrollbar" of me) - theScroll
+          if the platform is "macos" then
+            set the viewProp["vscroll"] of me to \
+                  round(the thumbPosition of scrollbar "dvVScrollbar" of me) - item 2 of macCurrentEventScrollValues()
+          else
+            put the viewProp["content window height"] of me into theAvailHeight
+            put round(theAvailHeight * .1) into theScroll
+            set the viewProp["vscroll"] of me to round(the thumbPosition of scrollbar "dvVScrollbar" of me) - theScroll
+          end if
         end if
       end if
       break
@@ -174,9 +179,14 @@ on rawKeyDown pKeyNum
         DeleteFieldEditor true, "close control"
       else
         if the visible of scrollbar "dvVScrollbar" of me or the viewProp["scroll when vScrollbar is hidden"] of me then
-          put the viewProp["content window height"] of me into theAvailHeight
-          put round(theAvailHeight * .1) into theScroll
-          set the viewProp["vscroll"] of me to round(the thumbPosition of scrollbar "dvVScrollbar" of me) + theScroll
+          if the platform is "macos" then
+            set the viewProp["vscroll"] of me to \
+                  round(the thumbPosition of scrollbar "dvVScrollbar" of me) - item 2 of macCurrentEventScrollValues()
+          else
+            put the viewProp["content window height"] of me into theAvailHeight
+            put round(theAvailHeight * .1) into theScroll
+            set the viewProp["vscroll"] of me to round(the thumbPosition of scrollbar "dvVScrollbar" of me) + theScroll
+          end if
         end if
       end if
       break

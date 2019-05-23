@@ -19,3 +19,6 @@ ui:
 libraries:
   - filename: ide/ide_library.livecodescript
     distribute: false
+extensions:
+  - filename: mac_scroll_wheel.lcm
+    source: mac_scroll_wheel.lcb

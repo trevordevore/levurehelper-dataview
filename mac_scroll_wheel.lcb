@@ -1,0 +1,46 @@
+library community.livecode.trevordevore.macosscrollwheel
+
+  use com.livecode.foreign
+  use com.livecode.objc
+
+  metadata title is "NSApp"
+  metadata author is "Trevor DeVore"
+  metadata version is "0.1.0"
+
+  private foreign handler ObjC_NSApplicationSharedApplication() \
+        returns ObjcId \
+        binds to "objc:NSApplication.+sharedApplication"
+  private foreign handler ObjC_NSApplicationCurrentEvent(in pSharedApp as ObjcId) \
+        returns ObjcId \
+        binds to "objc:NSApplication.currentEvent"
+  private foreign handler ObjC_NSEventScrollingDeltaX(in pEvent as ObjcId) \
+        returns NaturalFloat \
+        binds to "objc:NSEvent.scrollingDeltaX"
+  private foreign handler ObjC_NSEventScrollingDeltaY(in pEvent as ObjcId) \
+        returns NaturalFloat \
+        binds to "objc:NSEvent.scrollingDeltaY"
+  private foreign handler ObjC_NSEventDeltaX(in pEvent as ObjcId) \
+        returns NaturalFloat \
+        binds to "objc:NSEvent.deltaX"
+  private foreign handler ObjC_NSEventDeltaY(in pEvent as ObjcId) \
+        returns NaturalFloat \
+        binds to "objc:NSEvent.deltaY"
+  private foreign handler ObjC_NSEventHasPreciseScrollingDeltas(in pEvent as ObjcId) \
+        returns CBool \
+        binds to "objc:NSEvent.hasPreciseScrollingDeltas"
+
+  public handler macCurrentEventScrollValues() returns String
+    variable nsApp as ObjcObject
+    variable nsEvent as ObjcObject
+    variable tPoints as String
+
+    unsafe
+      put ObjC_NSApplicationSharedApplication() into nsApp
+      put ObjC_NSApplicationCurrentEvent(nsApp) into nsEvent
+      put ObjC_NSEventScrollingDeltaX(nsEvent) formatted as string & "," & \
+            ObjC_NSEventScrollingDeltaY(nsEvent) formatted as string into tPoints
+    end unsafe
+
+    return tPoints
+  end handler
+end library
