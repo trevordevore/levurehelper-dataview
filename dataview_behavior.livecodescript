@@ -2099,6 +2099,21 @@ private command _init
   if sInit then return empty
   put true into sInit
 
+  set the opaque of me to false
+  set the showborder of me to false
+  set the showname of me to false
+  set the hscrollbar of me to false
+  set the vscrollbar of me to false
+  set the dropShadow of me to empty
+  set the innderShadow of me to empty
+  set the outerGlow of me to empty
+  set the innerGlow of me to empty
+  set the colorOverlay of me to empty
+
+  if the buildnumber >= 15500 then // 9.5dp-1
+    set the layermode of me to "container"
+  end if
+
   switch the platform
     case "Win32"
       if "registryRead" is among the items of the securityPermissions then
