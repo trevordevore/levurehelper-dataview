@@ -4211,8 +4211,6 @@ private command _updateControlCacheForActiveRange pStartRow, pEndRow
             # Send message if control will maintain current data
             dispatch "HideRowControl" to control id tControlId
             hide control id tControlId
-
-            _resetHiliteSettingOnControl tControlId
             --               end if
           end if
         catch e
