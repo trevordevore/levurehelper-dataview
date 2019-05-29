@@ -2105,7 +2105,7 @@ private command _init
   set the hscrollbar of me to false
   set the vscrollbar of me to false
   set the dropShadow of me to empty
-  set the innderShadow of me to empty
+  set the innerShadow of me to empty
   set the outerGlow of me to empty
   set the innerGlow of me to empty
   set the colorOverlay of me to empty
@@ -4271,7 +4271,7 @@ private function _getControlIdOfStyle pStyle
         set the hscrollbar of control id tControlId to false
         set the vscrollbar of control id tControlId to false
         set the dropShadow of control id tControlId to empty
-        set the innderShadow of control id tControlId to empty
+        set the innerShadow of control id tControlId to empty
         set the outerGlow of control id tControlId to empty
         set the innerGlow of control id tControlId to empty
         set the colorOverlay of control id tControlId to empty
