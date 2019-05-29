@@ -2112,6 +2112,11 @@ private command _init
 
   if the buildnumber >= 15500 then // 9.5dp-1
     set the layermode of me to "container"
+    set the layermode of control "dvBackground" of me to "dynamic"
+    set the layermode of group "dvListMask" of me to "container"
+    set the layermode of group "dvList" of me to "container"
+    set the layermode of group "dvDropIndicator" of me to "dynamic"
+    set the layerMode of control "dvVScrollbar" of me to "dynamic"
   end if
 
   switch the platform
