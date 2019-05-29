@@ -3135,13 +3135,16 @@ private command _setVScroll pValue
     put max(0, min(pValue, the viewProp["content height"] of me - _getContentWindowHeight())) into pValue
   end if
 
+  put the lockMessages into msgsAreLocked
+
   lock messages
-  if pValue is the viewProp["vscroll"] of me then return empty
-  unlock messages
+  if pValue is the viewProp["vscroll"] of me then
+    set the lockMessages to msgsAreLocked
+    exit _setVScroll
+  end if
 
   ## First set the vscroll and draw
   put the long id of me is in the focusedObject into refocusOnMe
-  put the lockMessages into msgsAreLocked
   unlock messages
   if refocusOnMe and the viewProp["field editor is open"] of me then
     put true into refocusOnFieldEditor
