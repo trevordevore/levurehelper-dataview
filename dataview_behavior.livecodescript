@@ -3035,8 +3035,7 @@ private command _moveControlIntoUnusedCachePool pCacheKey, pRow
 
     ## Move back into pool of available controls
     if the viewProp["cache"] of me is "none" then
-      put tControlId into \
-            line (the number of lines of sViewPropsA["controls"]["available"] + 1) of sViewPropsA["controls"]["available"]
+      put empty into sViewPropsA["controls"]["available"][tControlId]
     end if
 
     # Reset the dvHiliteState of the control so that dvHilite is initialized next time control is used.
@@ -3836,29 +3835,16 @@ pControlId: The id of the control to cache.
 Returns: empty
 */
 private command _cacheRowControl pRow, pControlId
-  local theLineNo, i, theCacheKey, theOffsetRow
+  local i, theCacheKey, theOffsetRow
 
   set the wholeMatches to true
 
   put _dispatchCacheKeyForRow(pRow) into theCacheKey
 
-  put lineoffset(pControlId, sViewPropsA["controls"]["available"]) into theLineNo
-  if theLineNo > 0 then
-    delete line theLineNo of sViewPropsA["controls"]["available"]
-    if sViewPropsA["controls"]["available"] is empty then
+  if pControlId is among the keys of sViewPropsA["controls"]["available"] then
+    delete local sViewPropsA["controls"]["available"][pControlId]
+    if the keys of sViewPropsA["controls"]["available"] is empty then
       delete local sViewPropsA["controls"]["available"]
-    end if
-  else
-    if sViewPropsA["controls"]["available"] contains pControlId then
-      breakpoint
-      put lineoffset(pControlId, sViewPropsA["controls"]["available"]) into theLineNo
-      --         local theData
-      --         put "pControlId:" && pControlId & cr & cr after theData
-      --         repeat for each line theLine in sViewPropsA["controls"]["available"]
-      --            put quote & theLine & quote & cr & cr after theData
-      --         end repeat
-      --         put theData
-      beep
     end if
   end if
 
@@ -4307,10 +4293,12 @@ pStyle: The found control will have this style.
 Returns: control reference or empty
 */
 private function _findAvailableControlOfStyle pStyle
-  repeat for each line theControl in sViewPropsA["controls"]["available"]
+  local tControlId
+
+  repeat for each key tControlId in sViewPropsA["controls"]["available"]
     try ## in case control doesn't exist
-      if the dvTemplateStyle of theControl is pStyle then
-        return theControl
+      if the dvTemplateStyle of control id tControlId is pStyle then
+        return tControlId
       end if
     catch e
     end try
