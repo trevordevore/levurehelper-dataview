@@ -2977,12 +2977,12 @@ private command _cleanupControl pCacheKey, pRow, pControlId, pDeleteInTime
 end _cleanupControl
 
 
-command __deleteRowControl pControl
+command __deleteRowControl pControlId
   local msgsAreLocked
 
   put the lockmessages into msgsAreLocked
   lock messages
-  if there is a pControl then delete pControl
+  if there is a control id pControlId then delete control id  pControlId
   set the lockmessages to msgsAreLocked
 end __deleteRowControl
 
