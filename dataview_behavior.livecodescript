@@ -3315,6 +3315,7 @@ private command _syncCacheKeyToRowMappings pRemoveStaleCacheKeys
   local refreshKeys
 
   set the wholematches to true
+  put pRemoveStaleCacheKeys is true into pRemoveStaleCacheKeys
 
   put the viewProp["cache"] of me is among the items of "eager,lazy" into refreshKeys
   put pRemoveStaleCacheKeys is true into pRemoveStaleCacheKeys
