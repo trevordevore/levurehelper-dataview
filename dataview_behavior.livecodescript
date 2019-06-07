@@ -688,16 +688,7 @@ command DeleteRows pRows
 
   ## Move control back into cache of available controls
   repeat for each item theRow in pRows
-    put _getCacheKeyForRow(theRow) into theCacheKey
-    if sViewPropsA["controls"]["cache"][theCacheKey] is an array then
-      _cleanupControl theCacheKey, theRow, sViewPropsA["controls"]["cache"][theCacheKey]["control"], true
-    end if
-
-    # Remove from rows in use
-    put itemOffset(theRow, sViewPropsA["controls"]["rows in use"]) into theItemNo
-    if theItemNo > 0 then
-      delete item theItemNo of sViewPropsA["controls"]["rows in use"]
-    end if
+    _deleteRowControlFromCache theRow
   end repeat
 
   _ensureIntegrityOfSelectedRows
@@ -710,6 +701,42 @@ command DeleteRows pRows
 
   return empty
 end DeleteRows
+
+
+/**
+Summary: Removes a row control from the cache. The view is not refreshed afterwards.
+
+Parameters:
+pRow: The row to remove.
+
+Description:
+Use this handler to remove controls from the cache as part of a larger handler that
+will also handle refreshing the view.
+
+Returns: nothing
+*/
+command DeleteRowControlFromCache pRow
+  _deleteRowControlFromCache pRow
+  return empty
+end DeleteRowControlFromCache
+
+
+private command _deleteRowControlFromCache pRow
+  local tCacheKey, tItemNo
+
+  put _getCacheKeyForRow(pRow) into tCacheKey
+  if sViewPropsA["controls"]["cache"][tCacheKey] is an array then
+    _cleanupControl tCacheKey, pRow, sViewPropsA["controls"]["cache"][tCacheKey]["control"], true
+  end if
+
+  # Remove from rows in use
+  put itemOffset(pRow, sViewPropsA["controls"]["rows in use"]) into tItemNo
+  if tItemNo > 0 then
+    delete item tItemNo of sViewPropsA["controls"]["rows in use"]
+  end if
+
+  return empty
+end _deleteRowControlFromCache
 
 
 /**
