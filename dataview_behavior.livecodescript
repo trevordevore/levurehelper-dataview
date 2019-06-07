@@ -2863,7 +2863,7 @@ private command _renderView pRefreshDataInCachedControls
   ## Cache controls based on settings
   if the viewProp["cache"] of me is among the items of "eager,lazy" then
     _updateControlCacheForActiveRange 0, 0 # This cleans up the current rows in use
-    _syncCacheKeyToRowMappings true
+    _syncCacheKeyToRowMappings false
     _cacheControls pRefreshDataInCachedControls # This caches the controls, creating as needed, and associating them with a row.
   else if not the viewProp["fixed row height"] of me then
     _updateControlCacheForActiveRange 0, 0
