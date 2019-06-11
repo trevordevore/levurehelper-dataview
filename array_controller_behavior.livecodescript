@@ -12,7 +12,7 @@ pDataA: A numerically indexed array of arrays.
 Example:
 put "Jane Doe" into tPeopleA[1]["name"]
 put "Jone Doe" into tPeopleA[2]["name"]
-set the dvArray of group "MyDataView" to tPeopleA
+set the dvData of group "MyDataView" to tPeopleA
 
 Returns: nothing
 */
