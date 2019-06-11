@@ -19,10 +19,7 @@ Returns: nothing
 setProp dvData pDataA
   put pDataA into sDataA
   put empty into sIdToRowLookupA
-  lock screen
-  ResetView
   RenderView
-  unlock screen
 end dvData
 
 
