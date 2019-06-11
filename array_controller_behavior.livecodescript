@@ -44,6 +44,61 @@ end CacheKeyForRow
 
 
 /**
+Summary: Deletes records from the source data array and refreshes the DataView with updated data source.
+
+Parameters:
+pRows: A comma-delimited list of ids to delete from the data source.
+pRefreshView: Pass in false to prevent the view being refreshed.
+
+Returns: nothing
+*/
+command DeleteIds pIds, pRefreshView
+  local tId, tRows
+  local tElementCount, tItemNo, tRow, tNextRowToDelete
+
+  put pRefreshView is not false into pRefreshView
+
+  repeat for each item tId in pIds
+    put _rowOfId(tId) & "," after tRows
+  end repeat
+  delete the last char of tRows
+
+  sort items of tRows numeric ascending
+  put the number of elements of sDataA into tElementCount
+
+  repeat for each item tRow in tRows
+    add 1 to tItemNo
+
+    delete local sDataA[tRow]
+
+    put item tItemNo+1 of tRows into tNextRowToDelete
+    if tNextRowToDelete is empty then
+      put tElementCount+1 into tNextRowToDelete
+    end if
+
+    # Reindex
+    repeat with tIndex = tRow+1 to tNextRowToDelete-1
+      put sDataA[tIndex] into sDataA[tIndex-tItemNo]
+    end repeat
+  end repeat
+
+  # Shorten the array.
+  repeat with tRow = tElementCount-tItemNo+1 to tElementCount
+    delete local sDataA[tRow]
+  end repeat
+
+  if the viewProp["cache"] of me is "none" then
+    if pRefreshView then
+      RefreshViewRows
+    end if
+  else
+    # Dataview Behavior will remove the row controls and call RefreshViewRows
+    DeleteRows tRows, pRefreshView
+  end if
+end DeleteIds
+
+
+/**
 Summary: Returns the `id` property of the selected row(s).
 
 Description:
