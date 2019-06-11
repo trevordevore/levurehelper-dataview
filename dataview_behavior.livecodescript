@@ -667,16 +667,19 @@ end ResizeRows
 Summary: Removes the specified row from the view. Use when data is removed from the model.
 
 Parameters:
-pRows The rows to delete.
+pRows: The rows to delete.
+pRefreshView: Pass in false to prevent the view being refreshed.
 
 Description:
 This handler is most useful when caching is turned on.
 
 Returns: empty
 */
-command DeleteRows pRows
+command DeleteRows pRows, pRefreshView
   local theRow, theCacheKey, theItemNo
   local msgsAreLocked
+
+  put pRefreshView is not false into pRefreshView
 
   put the lockMessages into msgsAreLocked
   lock screen
@@ -694,7 +697,9 @@ command DeleteRows pRows
   _ensureIntegrityOfSelectedRows
 
   ## Redraw everything. Note that RefreshViewRows won't reload data in cached controls, just refresh the view.
-  RefreshViewRows
+  if pRefreshView then
+    RefreshViewRows
+  end if
   set the lockMessages to msgsAreLocked
 
   unlock screen
