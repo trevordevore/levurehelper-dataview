@@ -1096,6 +1096,8 @@ Table of properties:
 | `effective scrollbar width` |  |
 | `scrollbar is visible` |  |
 | `first selected row` |  |
+| `first working row` |  |
+| `last working row` |  |
 
 Returns: Mixed
 */
