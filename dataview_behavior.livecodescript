@@ -3916,25 +3916,25 @@ end _workingTopAndBottomContentCoordinates
 Summary: Determines the range of rows to show based on the current vscroll setting.
 
 Parameters:
-@pStartRow: Output contains the row to start on.
-@pEndRow: Output contains the row to end on.
-@pStartRowYOffset: Output contains the y offset for the first row from the top of the container group. <= 0.
+@rStartRow: Output contains the row to start on.
+@rEndRow: Output contains the row to end on.
+@rStartRowYOffset: Output contains the y offset for the first row from the top of the container group. <= 0.
 
 Description:
 If `fixed row height` is false then controls will be resized in this handler.
 
 Returns: empty
 */
-private command _getRangeOfRowsToDisplay @pStartRow, @pEndRow, @pStartRowYOffset
+private command _getRangeOfRowsToDisplay @rStartRow, @rEndRow, @rStartRowYOffset
   local theRowCount, theVScroll, theAdditionalHeight
   local theContentHeight, theRowWidth, recalculateHeight, theIndex
 
   put the viewProp["number of rows"] of me into theRowCount
 
   if theRowCount is 0 then
-    put 0 into pStartRow
-    put 0 into pEndRow
-    put 0 into pStartRowYOffset
+    put 0 into rStartRow
+    put 0 into rEndRow
+    put 0 into rStartRowYOffset
     return empty
   end if
 
@@ -3947,37 +3947,37 @@ private command _getRangeOfRowsToDisplay @pStartRow, @pEndRow, @pStartRowYOffset
   if the viewProp["fixed row height"] of me then
     local theNumberOfVisibleRows
 
-    -- vscroll div row height = pStartRow
-    -- vscroll mod row height = pStartRowYOffset
-    -- pStartRow + (window height / row height) = pEndRow
-    -- if pStartRowYOffset < 0 then add 1 to pEndRow
+    -- vscroll div row height = rStartRow
+    -- vscroll mod row height = rStartRowYOffset
+    -- rStartRow + (window height / row height) = rEndRow
+    -- if rStartRowYOffset < 0 then add 1 to rEndRow
     put the viewProp["vscroll"] of me into theVScroll ## may be negative if "bouncing" is supported
     --         put max(0, the viewProp["vscroll"] of me) into theVSCroll
     if theVSCroll < 0 then put abs(theVSCroll) into theAdditionalHeight
 
-    put max(0, theVSCroll - item 1 of _workingTopAndBottomContentCoordinates()) div the viewProp["row height"] of me + 1 into pStartRow
+    put max(0, theVSCroll - item 1 of _workingTopAndBottomContentCoordinates()) div the viewProp["row height"] of me + 1 into rStartRow
 
     if theVScroll < item 1 of _workingTopAndBottomContentCoordinates() then
-      put -(item 1 of _workingTopAndBottomContentCoordinates() - theVScroll) into pStartRowYOffset
-      put (the viewProp["content window height"] of me + pStartRowYOffset + theAdditionalHeight) div the viewProp["row height"] of me into theNumberOfVisibleRows
+      put -(item 1 of _workingTopAndBottomContentCoordinates() - theVScroll) into rStartRowYOffset
+      put (the viewProp["content window height"] of me + rStartRowYOffset + theAdditionalHeight) div the viewProp["row height"] of me into theNumberOfVisibleRows
       if the viewProp["content window height"] of me mod the viewProp["row height"] of me > 0 then
         add 1 to theNumberOfVisibleRows
       end if
     else
-      put (theVSCroll - item 1 of _workingTopAndBottomContentCoordinates()) mod the viewProp["row height"] of me into pStartRowYOffset
-      put (the viewProp["content window height"] of me + pStartRowYOffset + theAdditionalHeight) div the viewProp["row height"] of me into theNumberOfVisibleRows
+      put (theVSCroll - item 1 of _workingTopAndBottomContentCoordinates()) mod the viewProp["row height"] of me into rStartRowYOffset
+      put (the viewProp["content window height"] of me + rStartRowYOffset + theAdditionalHeight) div the viewProp["row height"] of me into theNumberOfVisibleRows
       if the viewProp["content window height"] of me mod the viewProp["row height"] of me > 0 then
         add 1 to theNumberOfVisibleRows
       end if
     end if
 
     ## Make sure we have enough controls to scroll
-    put min(theRowCount, pStartRow + theNumberOfVisibleRows) into pEndRow
-    if pStartRowYOffset < 0 then
-      add 1 to pEndRow
+    put min(theRowCount, rStartRow + theNumberOfVisibleRows) into rEndRow
+    if rStartRowYOffset < 0 then
+      add 1 to rEndRow
     end if
 
-    put min(pEndRow, the viewProp["number of rows"] of me) into pEndRow
+    put min(rEndRow, the viewProp["number of rows"] of me) into rEndRow
 
   else if the viewProp["cache"] of me is "none" then # not fixed height but not cached
     local theContentWindowHeight, theTopOfLastControl, theControlHeight
@@ -3988,18 +3988,18 @@ private command _getRangeOfRowsToDisplay @pStartRow, @pEndRow, @pStartRowYOffset
     ## to display. If it does then we start everything over and recalculate.
     repeat forever
       put the viewProp["content width"] of me into theRowWidth ## this can change if scrollbar is shown/hidden!!!
-      put empty into pStartRow
-      put empty into pEndRow
+      put empty into rStartRow
+      put empty into rEndRow
       put empty into recalculateHeight
       put empty into theTopOfLastControl
       put item 1 of _workingTopAndBottomContentCoordinates() into theContentHeight
-      put empty into pStartRowYOffset
+      put empty into rStartRowYOffset
       put the viewProp["vscroll"] of me into theVSCroll
 
       repeat with theRow = 1 to theRowCount
-        -- pStartRow = last control that is <= vscroll
-        -- pEndRow = control right after control that exceeds content window height
-        -- pStartRowYOffset = vscroll - top of pStartRow
+        -- rStartRow = last control that is <= vscroll
+        -- rEndRow = control right after control that exceeds content window height
+        -- rStartRowYOffset = vscroll - top of rStartRow
 
         put theContentHeight into theTopOfLastControl
 
@@ -4011,7 +4011,7 @@ private command _getRangeOfRowsToDisplay @pStartRow, @pEndRow, @pStartRowYOffset
         # NOTE: This code won't run again if 'recalculate the height' is true.
 
         if theControlHeight is NULL then
-          if pStartRow is not empty OR (pStartRow is empty AND theContentHeight+kDefaultForNonCachedVariableHeightRows > theVScroll) then
+          if rStartRow is not empty OR (rStartRow is empty AND theContentHeight+kDefaultForNonCachedVariableHeightRows > theVScroll) then
             # PrepareRow will resize and adjust "content height". Will subtract current height so make sure it is added in.
             if sViewPropsA["controls"]["control height cache"][theRow] is NULL then
               set the viewProp["content height"] of me to the viewProp["content height"] of me - kDefaultForNonCachedVariableHeightRows
@@ -4033,16 +4033,16 @@ private command _getRangeOfRowsToDisplay @pStartRow, @pEndRow, @pStartRowYOffset
 
         add theControlHeight to theContentHeight
 
-        if pStartRow is empty then
+        if rStartRow is empty then
           ## First fill in the starting row
           if theContentHeight > theVScroll then
-            put theRow into pStartRow
-            put theVScroll - theTopOfLastControl into pStartRowYOffset
+            put theRow into rStartRow
+            put theVScroll - theTopOfLastControl into rStartRowYOffset
             put 0 into theContentHeight -- reset as rest of controls must be as tall as content window so first control can scroll off.
           end if
         else
           if theContentHeight >= theContentWindowHeight then
-            put theRow into pEndRow
+            put theRow into rEndRow
             exit repeat
           end if
         end if
@@ -4071,11 +4071,11 @@ private command _getRangeOfRowsToDisplay @pStartRow, @pEndRow, @pStartRowYOffset
     ## to display. If it does then we start everything over and recalculate.
     repeat forever
       put the viewProp["content width"] of me into theRowWidth ## this can change if scrollbar is shown/hidden!!!
-      put empty into pStartRow
-      put empty into pEndRow
+      put empty into rStartRow
+      put empty into rEndRow
       put empty into recalculateHeight
       put empty into theTopOfLastControl
-      put empty into pStartRowYOffset
+      put empty into rStartRowYOffset
       --         put max(0, the viewProp["vscroll"] of me) into theVSCroll # removed for ios "bounce" effect.
       put the viewProp["vscroll"] of me into theVSCroll
       put item 1 of _workingTopAndBottomContentCoordinates() into theContentHeight
@@ -4091,9 +4091,9 @@ private command _getRangeOfRowsToDisplay @pStartRow, @pEndRow, @pStartRowYOffset
       ## determine which rows to display.
 
       repeat with theRow = 1 to theRowCount
-        -- pStartRow = last control that is <= vscroll
-        -- pEndRow = control right after control that exceeds content window height
-        -- pStartRowYOffset = vscroll - top of pStartRow
+        -- rStartRow = last control that is <= vscroll
+        -- rEndRow = control right after control that exceeds content window height
+        -- rStartRowYOffset = vscroll - top of rStartRow
 
         put theContentHeight into theTopOfLastControl
         put _getCacheKeyForRow(theRow) into theCacheKey
@@ -4106,16 +4106,16 @@ private command _getRangeOfRowsToDisplay @pStartRow, @pEndRow, @pStartRowYOffset
         put sViewPropsA["controls"]["cache"][theCacheKey]["height"] into theControlHeight
         add theControlHeight to theContentHeight
 
-        if pStartRow is empty then
+        if rStartRow is empty then
           ## First fill in the starting row
           if theContentHeight > theVScroll then
-            put theRow into pStartRow
-            put theVScroll - theTopOfLastControl into pStartRowYOffset
+            put theRow into rStartRow
+            put theVScroll - theTopOfLastControl into rStartRowYOffset
             put 0 into theContentHeight -- reset as rest of controls must be as tall as content window so first control can scroll off.
           end if
         else
           if theContentHeight >= theContentWindowHeight then
-            put theRow into pEndRow
+            put theRow into rEndRow
             exit repeat
           end if
         end if
@@ -4136,11 +4136,11 @@ private command _getRangeOfRowsToDisplay @pStartRow, @pEndRow, @pStartRowYOffset
   end if
 
   if theRowCount > 0 then
-    if pStartRow is empty then
-      put 1 into pStartRow # a good starting number
+    if rStartRow is empty then
+      put 1 into rStartRow # a good starting number
     end if
-    if pEndRow is empty then
-      put theRowCount into pEndRow
+    if rEndRow is empty then
+      put theRowCount into rEndRow
     end if
   end if
 
