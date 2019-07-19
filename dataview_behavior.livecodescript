@@ -798,6 +798,7 @@ command ResizeToFit
   unlock messages
 
   try
+    _resetHiliteStateInCachedControls
     _resizeRowControlsAsNeeded
 
     lock messages
@@ -3673,6 +3674,26 @@ private command _setupRowControl pRow, pRowControlId, pForceFillInData
 
   return pRowControlId
 end _setupRowControl
+
+
+/**
+Summary: Resets the dvHiliteState property of all cached controls.
+
+Description:
+When resizing the DataGrid dvHilite should be called again. Resetting the
+custom property ensures that it will.
+
+Returns: nothing
+*/
+private command _resetHiliteStateInCachedControls
+  local tIndex
+
+  repeat for each key tIndex in sViewPropsA["controls"]["cache"]
+    set the dvHiliteState of control id sViewPropsA["controls"]["cache"][tIndex]["control"] to empty
+  end repeat
+
+  return empty
+end _resetHiliteStateInCachedControls
 
 
 /**
