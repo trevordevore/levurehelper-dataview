@@ -2575,16 +2575,22 @@ Summary: Loops through the visible controls ("rows in use") and turns highlighti
 Returns: empty
 */
 private command _hiliteRowsInVisibleControls
-  local msgsAreLocked, theBoolean
+  local msgsAreLocked, tRow, tBoolean, tControlId
 
   lock screen
   put the lockMessages into msgsAreLocked
   set the lockMessages to false
   set the wholeMatches to true
-  repeat for each item theRow in sViewPropsA["controls"]["rows in use"]
-    put theRow is among the items of sViewPropsA["hilited rows"] into theBoolean
-    _hiliteControl sViewPropsA["controls"]["cache"][_getCacheKeyForRow(theRow)]["control"], theBoolean
+
+  repeat for each item tRow in sViewPropsA["controls"]["rows in use"]
+    put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(tRow)]["control"] into tControlId
+
+    if tControlId is not empty then
+      put tRow is among the items of sViewPropsA["hilited rows"] into tBoolean
+      _hiliteControl tControlId, tBoolean
+    end if
   end repeat
+
   set the lockMessages to msgsAreLocked
   unlock screen
 
