@@ -7,6 +7,9 @@ library community.livecode.trevordevore.macosscrollwheel
   metadata author is "Trevor DeVore"
   metadata version is "0.1.0"
 
+  private type NSUInteger is CULong
+  constant kNSEventTypeScrollWheel is 22
+
   private foreign handler ObjC_NSApplicationSharedApplication() \
         returns ObjcId \
         binds to "objc:NSApplication.+sharedApplication"
@@ -28,18 +31,29 @@ library community.livecode.trevordevore.macosscrollwheel
   private foreign handler ObjC_NSEventHasPreciseScrollingDeltas(in pEvent as ObjcId) \
         returns CBool \
         binds to "objc:NSEvent.hasPreciseScrollingDeltas"
+  private foreign handler ObjC_NSEventType(in pEvent as ObjcId) \
+        returns NSUInteger \
+        binds to "objc:NSEvent.type"
 
   public handler macCurrentEventScrollValues() returns String
     variable nsApp as ObjcObject
     variable nsEvent as ObjcObject
     variable tPoints as String
+    variable tDeltaX as Number
+    variable tDeltaY as Number
+    variable tEventType as Number
 
     unsafe
       put ObjC_NSApplicationSharedApplication() into nsApp
       put ObjC_NSApplicationCurrentEvent(nsApp) into nsEvent
-      put ObjC_NSEventScrollingDeltaX(nsEvent) formatted as string & "," & \
-            ObjC_NSEventScrollingDeltaY(nsEvent) formatted as string into tPoints
+      if ObjC_NSEventType(nsEvent) is kNSEventTypeScrollWheel then
+        put ObjC_NSEventScrollingDeltaX(nsEvent) into tDeltaX
+        put ObjC_NSEventScrollingDeltaY(nsEvent) into tDeltaY
+      end if
     end unsafe
+
+    put tDeltaX formatted as string & "," & \
+          tDeltaY formatted as string into tPoints
 
     return tPoints
   end handler
