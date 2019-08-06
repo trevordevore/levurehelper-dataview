@@ -3,9 +3,9 @@ library community.livecode.trevordevore.macosscrollwheel
   use com.livecode.foreign
   use com.livecode.objc
 
-  metadata title is "NSApp"
+  metadata title is "macOS Scroll Wheel"
   metadata author is "Trevor DeVore"
-  metadata version is "0.1.0"
+  metadata version is "1.0.0"
 
   private type NSUInteger is CULong
   constant kNSEventTypeScrollWheel is 22
