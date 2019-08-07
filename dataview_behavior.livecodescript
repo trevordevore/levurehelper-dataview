@@ -2053,11 +2053,12 @@ on dvDragMove pMouseH,pMouseV
           # If closer to middle then dropOn
           # If closer to top then dropAbove
           # If closer to bottom then + 1 and dropAbove
-          local tDraggingInfoA, tProposedDropOperation, tProposedDropRow
+          local tDraggingInfoA, tProposedDropOperation, tProposedDropRow, tOrigProposedDropRow
           local tControlRect, tTop, tBottom, tHeight
           local tDropIndicatorOffset
 
           put the dvRow of control id tTargetControlId into tProposedDropRow
+          put tProposedDropRow into tOrigProposedDropRow
 
           put the rect of control id tTargetControlId into tControlRect
           put item 2 of tControlRect into tTop
@@ -2069,14 +2070,6 @@ on dvDragMove pMouseH,pMouseV
           else if pMouseV > (tBottom - (tHeight/2)) then
             put "above" into tProposedDropOperation
             add 1 to tProposedDropRow
-
-            # Get coordiantes of new drop row
-            put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(tProposedDropRow)]["control"] into tTargetControlId
-            if tTargetControlId is not empty then
-              put the rect of control id tTargetControlId into tControlRect
-              put item 2 of tControlRect into tTop
-              put item 4 of tControlRect into tBottom
-            end if
           else
             put "on" into tProposedDropOperation
           end if
@@ -2092,6 +2085,16 @@ on dvDragMove pMouseH,pMouseV
             put tProposedDropRow into sDropStructure["drop row"]
             put tProposedDropOperation into sDropStructure["drop operation"]
             put true into showDropIndicator
+
+            # Proposed row
+            if tProposedDropRow is not tOrigProposedDropRow then
+              put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(tProposedDropRow)]["control"] into tTargetControlId
+              if tTargetControlId is not empty then
+                put the rect of control id tTargetControlId into tControlRect
+                put item 2 of tControlRect into tTop
+                put item 4 of tControlRect into tBottom
+              end if
+            end if
 
             if tProposedDropOperation is "above" then
               put tTop into tY
