@@ -1990,25 +1990,20 @@ Parameter three is the row that was dropped after. 0 will be passed if drop was 
 
 */
 on dvDragDrop
-  local processTheDrop, theDropStructure
+  local tDraggingInfoA, processTheDrop, tDropStructure
 
   ## Cache before we clean up
-  if the dragAction is "move" AND sDropStructure["dropped after row"] is empty then put false into processTheDrop
+  if the dragAction is "move" AND sDropStructure["drop row"] is empty then put false into processTheDrop
   else put the dragAction is not "none" into processTheDrop  ## This works better as it takes into account dropping data onto empty view from other source.
-  put sDropStructure into theDropStructure
+  put sDropStructure into tDropStructure
 
   ## If some other control displays a dialog during dragDrop, dragMove will still be sent
   ## if the mouse moves within the dialog. We don't want to process those any longer at this point.
   dvFreezeMouseRelatedDragMessagesPriorToCleanup
 
   if processTheDrop then
-    local theNewStartingRow
-
-    put max(0, theDropStructure["dropped after row"]) into theDropStructure["dropped after row"]
-    put theDropStructure["dropped after row"] into theNewStartingRow
-    if theDropStructure["dropped after row"] < item 1 of theDropStructure["originating rows"] then add 1 to theNewStartingRow
-
-    dispatch "DragReorderRows" with theDropStructure["originating rows"], theNewStartingRow, theDropStructure["dropped after row"]
+    put the dragAction into tDraggingInfoA["action"]
+    dispatch "AcceptRowDrop" with tDraggingInfoA, tDropStructure["drop row"], tDropStructure["drop operation"]
   end if
 end dvDragDrop
 
@@ -2019,34 +2014,108 @@ Summary: Implementation of dragMove for the view. Called from the frontscript.
 */
 on dvDragMove pMouseH,pMouseV
 
-  ## Throttle calls to this
-  if sViewPropsA["running actions"]["dragmove"] then
-    return empty
-  end if
-
   ## Make sure data view control will accept drop
   if the dragSource contains the long ID of me and (the mouseControl is not empty and the long id of the mouseControl contains the long ID of me) then
     set the dragAction to "move"
   end if
 
-  put true into sViewPropsA["running actions"]["dragmove"]
+  put empty into sDropStructure["drop row"]
+  put empty into sDropStructure["drop operation"]
+
   try
-    _positionDropIndicator pMouseH,pMouseV
+    local msgsAreLocked
+    local tViewRect
+    local showDropIndicator = false
 
-    # This messes up behavior (e.g. escape key won't always properly cancel)
-    --      ## We can't send messages so hang out until mouseloc changes
-    --      repeat until (the mouseLoc is not pMouseH,pMouseV) or (mouse(1) is "up" and mouse(3) is "up")
-    --         ## Throttle calls to redrawing
+    put the lockMessages into msgsAreLocked
 
-    --         if not sViewPropsA["running actions"]["vscroll"] then
-    --            _listGroupDragReorderAutoScroll pMouseH,pMouseV
-    --            _positionDropIndicator pMouseH, pMouseV
-    --         end if
-    --      end repeat
+    put the viewProp["content window rect"] of me into tViewRect
+
+    if (pMouseH & "," & pMouseV) is within tViewRect then
+      if the mouseControl is not empty then
+        local tTargetControlId
+
+        put the dvRowControl of the mouseControl into tTargetControlId
+
+        if tTargetControlId is not empty then
+          put the short id of tTargetControlId into tTargetControlId
+        else
+          if pMouseV <= (item 2 of tViewRect + the viewProp["content top padding"] of me + 1) then
+            # top padding area. Use first control.
+            put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(item 1 of sViewPropsA["controls"]["rows in use"])]["control"] into tTargetControlId
+          else
+            ## Assume we are below the last control
+            put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(item -1 of sViewPropsA["controls"]["rows in use"])]["control"] into tTargetControlId
+          end if
+        end if
+
+        if tTargetControlId is not empty then
+          # If closer to middle then dropOn
+          # If closer to top then dropAbove
+          # If closer to bottom then + 1 and dropAbove
+          local tDraggingInfoA, tProposedDropOperation, tProposedDropRow
+          local tControlRect, tTop, tBottom, tHeight
+          local tDropIndicatorOffset
+
+          put the dvRow of control id tTargetControlId into tProposedDropRow
+
+          put the rect of control id tTargetControlId into tControlRect
+          put item 2 of tControlRect into tTop
+          put item 4 of tControlRect into tBottom
+          put tBottom - tTop into tHeight
+
+          if pMouseV < (tTop + (tHeight/2)) then
+            put "above" into tProposedDropOperation
+          else if pMouseV > (tBottom - (tHeight/2)) then
+            put "above" into tProposedDropOperation
+            add 1 to tProposedDropRow
+          else
+            put "on" into tProposedDropOperation
+          end if
+
+          put the dragAction into tDraggingInfoA["action"]
+          put pMouseH into tDraggingInfoA["mouseH"]
+          put pMouseV into tDraggingInfoA["mouseV"]
+
+          dispatch "ValidateRowDrop" to me with tDraggingInfoA, tProposedDropRow, tProposedDropOperation
+          if the result is not false then
+            local tX, tY
+
+            put tProposedDropRow into sDropStructure["drop row"]
+            put tProposedDropOperation into sDropStructure["drop operation"]
+            put true into showDropIndicator
+
+            if tProposedDropOperation is "above" then
+              put tTop into tY
+            else
+              put tBottom into tY
+            end if
+
+            put (item 4 of sDropStructure["default drop indicator rect"] \
+                  - item 2 of sDropStructure["default drop indicator rect"]) \
+                  / 2 div 1 into tDropIndicatorOffset ## div 1 = floor
+
+            lock screen
+            lock messages
+            put item 1 of sDropStructure["default drop indicator rect"] into tX
+            put min(item 4 of tViewRect, max(item 2 of tViewRect + tDropIndicatorOffset, tY)) into tY ## don't let outside of the List group
+            put tY - tDropIndicatorOffset into tY
+            set the topLeft of group "dvDropIndicator" of me to tX, tY
+            unlock messages
+            dispatch "PositionDropIndicator" to group 1 of group "dvDropIndicator" of me with sDropStructure["drop row"], sDropStructure["drop operation"]
+            unlock screen
+          end if
+        end if
+      end if
+    end if
+
+    _setDropIndicatorVisibility showDropIndicator
+
+    set the lockMessages to msgsAreLocked
+
   catch e
-    loggerLogMsg param(0) && "error:" & cr & e
+    put param(0) && "error:" && e
   end try
-  put false into sViewPropsA["running actions"]["dragmove"]
 end dvDragMove
 
 
