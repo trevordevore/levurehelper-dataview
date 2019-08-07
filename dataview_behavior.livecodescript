@@ -2069,6 +2069,12 @@ on dvDragMove pMouseH,pMouseV
           else if pMouseV > (tBottom - (tHeight/2)) then
             put "above" into tProposedDropOperation
             add 1 to tProposedDropRow
+
+            # Get coordiantes of new drop row
+            put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(tProposedDropRow)]["control"] into tTargetControlId
+            put the rect of control id tTargetControlId into tControlRect
+            put item 2 of tControlRect into tTop
+            put item 4 of tControlRect into tBottom
           else
             put "on" into tProposedDropOperation
           end if
