@@ -2108,7 +2108,7 @@ on dvDragMove pMouseH,pMouseV
             put tY - tDropIndicatorOffset into tY
             set the topLeft of group "dvDropIndicator" of me to tX, tY
             unlock messages
-            dispatch "PositionDropIndicator" to group 1 of group "dvDropIndicator" of me with sDropStructure["drop row"], sDropStructure["drop operation"]
+            dispatch "PositionDropIndicator" to group 1 of group "dvDropIndicator" of me with tDraggingInfoA, sDropStructure["drop row"], sDropStructure["drop operation"]
             unlock screen
           end if
         end if

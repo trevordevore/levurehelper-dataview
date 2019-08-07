@@ -1,5 +1,5 @@
 script "DataView Drop Indicator Behavior"
-command PositionDropIndicator pRow, pDropOperation
+command PositionDropIndicator pDraggingInfoA, pRow, pDropOperation
   _resize
 end PositionDropIndicator
 
