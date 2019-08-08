@@ -1875,8 +1875,6 @@ pBoolean: True to start the operation, false to stop.
 Returns: Error
 */
 setprop dvTrackDragReorder [pOriginatingRows] pBoolean
-  --   # temp
-  --   put false into sDropStructure["tracking"]
   if pBoolean is not sDropStructure["tracking"] then
     if pBoolean then
       local theDropIndicatorGroup, theContentRect, theRect
@@ -1914,7 +1912,6 @@ setprop dvTrackDragReorder [pOriginatingRows] pBoolean
       unlock messages
       unlock screen
       set the rect of theDropIndicatorGroup to theRect # this will trigger resizeControl
-      --         dispatch "resizeControl" to theDropIndicatorGroup # in case you want to force resizeControl even when rect doesn't change
 
       put the rect of theDropIndicatorGroup into sDropStructure["default drop indicator rect"]
       insert script of stack "DataView Track Drag and Drop Behavior" into front
@@ -1984,9 +1981,12 @@ end dvDragLeave
 Summary: Implementation of dragDrop for the view. Called from the frontscript.
 
 Description:
-Sends the message `DragReorderRows` to the control. Parameter one is the row(s) that was being dragged.
-Parameter two is the new starting row for `pTargetRows` (assuming a flat list).
-Parameter three is the row that was dropped after. 0 will be passed if drop was at top of DataView.
+When dragDrop is triggered this handler will notify the view by dispatching
+`AcceptRowDrop` along with the following parameters:
+
+1. pDraggingInfoA: Array with `action` (dragAction), `mouseH`, and `mouseV` keys. Additional keys may have been added by the `ValidateRowDrop` command.
+2. pRow: The row that the drop occurred on.
+3. pDropOperation: The drop operation. `on` or `above`.
 
 */
 on dvDragDrop
@@ -2010,6 +2010,20 @@ end dvDragDrop
 
 /**
 Summary: Implementation of dragMove for the view. Called from the frontscript.
+
+Description:
+During dragMove this handler will calculate a proposed drop row and drop operation
+based on the position of the mouse. It will then dispatch `ValidateRowDrop` to the
+view and pass the following parameters:
+
+1. pDraggingInfoA: Array with `action` (dragAction), `mouseH`, and `mouseV` keys.
+2. pProposedRow: The proposed row that the drop should occur on based on the mouse vertical position.
+3. pProposedDropOperation: The proposed drop operation based on the mouse vertical position. `on` or `above`.
+
+The `ValidateRowDrop` command can pass any of the above parameters by reference and modify them.
+Modifying the proposed row and drop operation can be done if needed in order to redirect a drop.
+
+If the drop should not occur on at all then return `false` from `ValidateRowDrop`.
 
 */
 on dvDragMove pMouseH,pMouseV
@@ -2050,15 +2064,15 @@ on dvDragMove pMouseH,pMouseV
         end if
 
         if tTargetControlId is not empty then
-          # If closer to middle then dropOn
-          # If closer to top then dropAbove
-          # If closer to bottom then + 1 and dropAbove
-          local tDraggingInfoA, tProposedDropOperation, tProposedDropRow, tOrigProposedDropRow
+          # If closer to middle then operation = "on"
+          # If closer to top then operation = "above"
+          # If closer to bottom then + 1 and operation = "above"
+          local tDraggingInfoA, tProposedDropOperation, tProposedRow, tOrigProposedRow
           local tControlRect, tTop, tBottom, tHeight
           local tDropIndicatorOffset
 
-          put the dvRow of control id tTargetControlId into tProposedDropRow
-          put tProposedDropRow into tOrigProposedDropRow
+          put the dvRow of control id tTargetControlId into tProposedRow
+          put tProposedRow into tOrigProposedRow
 
           put the rect of control id tTargetControlId into tControlRect
           put item 2 of tControlRect into tTop
@@ -2069,7 +2083,7 @@ on dvDragMove pMouseH,pMouseV
             put "above" into tProposedDropOperation
           else if pMouseV > (tBottom - (tHeight/2)) then
             put "above" into tProposedDropOperation
-            add 1 to tProposedDropRow
+            add 1 to tProposedRow
           else
             put "on" into tProposedDropOperation
           end if
@@ -2078,17 +2092,17 @@ on dvDragMove pMouseH,pMouseV
           put pMouseH into tDraggingInfoA["mouseH"]
           put pMouseV into tDraggingInfoA["mouseV"]
 
-          dispatch "ValidateRowDrop" to me with tDraggingInfoA, tProposedDropRow, tProposedDropOperation
+          dispatch "ValidateRowDrop" to me with tDraggingInfoA, tProposedRow, tProposedDropOperation
           if the result is not false then
             local tX, tY
 
-            put tProposedDropRow into sDropStructure["drop row"]
+            put tProposedRow into sDropStructure["drop row"]
             put tProposedDropOperation into sDropStructure["drop operation"]
             put true into showDropIndicator
 
             # Proposed row
-            if tProposedDropRow is not tOrigProposedDropRow then
-              put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(tProposedDropRow)]["control"] into tTargetControlId
+            if tProposedRow is not tOrigProposedRow then
+              put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(tProposedRow)]["control"] into tTargetControlId
               if tTargetControlId is not empty then
                 put the rect of control id tTargetControlId into tControlRect
                 put item 2 of tControlRect into tTop
