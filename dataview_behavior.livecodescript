@@ -2055,91 +2055,91 @@ on dvDragMove pMouseH,pMouseV
 
     lock screen
 
-    if (pMouseH & "," & pMouseV) is within tViewRect then
-      if the mouseControl is not empty then
-        local tTargetControlId
+    # Make sure that this DataView is the actual target of the message. If the user drags over multiple DataViews
+    # during a drag session then this instance will get the message even if it isn't the target.
+    if the mouseControl is not empty and the dvControl of the long id of the mousecontrol is the long id of me then
+      local tTargetControlId
 
-        put the dvRowControl of the mouseControl into tTargetControlId
+      put the dvRowControl of the mouseControl into tTargetControlId
 
-        if tTargetControlId is not empty then
-          put the short id of tTargetControlId into tTargetControlId
+      if tTargetControlId is not empty then
+        put the short id of tTargetControlId into tTargetControlId
+      else
+        if pMouseV <= (item 2 of tViewRect + the viewProp["content top padding"] of me + 1) then
+          # top padding area. Use first control.
+          put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(item 1 of sViewPropsA["controls"]["rows in use"])]["control"] into tTargetControlId
         else
-          if pMouseV <= (item 2 of tViewRect + the viewProp["content top padding"] of me + 1) then
-            # top padding area. Use first control.
-            put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(item 1 of sViewPropsA["controls"]["rows in use"])]["control"] into tTargetControlId
-          else
-            ## Assume we are below the last control
-            put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(item -1 of sViewPropsA["controls"]["rows in use"])]["control"] into tTargetControlId
-          end if
+          ## Assume we are below the last control
+          put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(item -1 of sViewPropsA["controls"]["rows in use"])]["control"] into tTargetControlId
+        end if
+      end if
+
+      if tTargetControlId is not empty then
+        # If closer to middle then operation = "on"
+        # If closer to top then operation = "above"
+        # If closer to bottom then + 1 and operation = "above"
+        local tDraggingInfoA, tProposedDropOperation, tProposedRow, tOrigProposedRow
+        local tControlRect, tTop, tBottom, tHeight
+        local tDropIndicatorOffset
+
+        put the dvRow of control id tTargetControlId into tProposedRow
+        put tProposedRow into tOrigProposedRow
+
+        put the rect of control id tTargetControlId into tControlRect
+        put item 2 of tControlRect into tTop
+        put item 4 of tControlRect into tBottom
+        put tBottom - tTop into tHeight
+
+        if pMouseV < (tTop + (tHeight/2)) then
+          put "above" into tProposedDropOperation
+        else if pMouseV > (tBottom - (tHeight/2)) then
+          put "above" into tProposedDropOperation
+          add 1 to tProposedRow
+        else
+          put "on" into tProposedDropOperation
         end if
 
-        if tTargetControlId is not empty then
-          # If closer to middle then operation = "on"
-          # If closer to top then operation = "above"
-          # If closer to bottom then + 1 and operation = "above"
-          local tDraggingInfoA, tProposedDropOperation, tProposedRow, tOrigProposedRow
-          local tControlRect, tTop, tBottom, tHeight
-          local tDropIndicatorOffset
+        put the dragAction into tDraggingInfoA["action"]
+        put pMouseH into tDraggingInfoA["mouseH"]
+        put pMouseV into tDraggingInfoA["mouseV"]
 
-          put the dvRow of control id tTargetControlId into tProposedRow
-          put tProposedRow into tOrigProposedRow
+        dispatch "ValidateRowDrop" to me with tDraggingInfoA, tProposedRow, tProposedDropOperation
+        if the result is not false then
+          local tX, tY
 
-          put the rect of control id tTargetControlId into tControlRect
-          put item 2 of tControlRect into tTop
-          put item 4 of tControlRect into tBottom
-          put tBottom - tTop into tHeight
+          put tProposedRow into sDropStructure["drop row"]
+          put tProposedDropOperation into sDropStructure["drop operation"]
+          put true into showDropIndicator
 
-          if pMouseV < (tTop + (tHeight/2)) then
-            put "above" into tProposedDropOperation
-          else if pMouseV > (tBottom - (tHeight/2)) then
-            put "above" into tProposedDropOperation
-            add 1 to tProposedRow
+          # Proposed row
+          if tProposedRow is not tOrigProposedRow then
+            put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(tProposedRow)]["control"] into tTargetControlId
+            if tTargetControlId is not empty then
+              put the rect of control id tTargetControlId into tControlRect
+              put item 2 of tControlRect into tTop
+              put item 4 of tControlRect into tBottom
+            end if
+          end if
+
+          if tProposedDropOperation is "above" then
+            put tTop into tY
           else
-            put "on" into tProposedDropOperation
+            put tBottom into tY
           end if
 
-          put the dragAction into tDraggingInfoA["action"]
-          put pMouseH into tDraggingInfoA["mouseH"]
-          put pMouseV into tDraggingInfoA["mouseV"]
+          put (item 4 of sDropStructure["default drop indicator rect"] \
+                - item 2 of sDropStructure["default drop indicator rect"]) \
+                / 2 div 1 into tDropIndicatorOffset ## div 1 = floor
 
-          dispatch "ValidateRowDrop" to me with tDraggingInfoA, tProposedRow, tProposedDropOperation
-          if the result is not false then
-            local tX, tY
-
-            put tProposedRow into sDropStructure["drop row"]
-            put tProposedDropOperation into sDropStructure["drop operation"]
-            put true into showDropIndicator
-
-            # Proposed row
-            if tProposedRow is not tOrigProposedRow then
-              put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(tProposedRow)]["control"] into tTargetControlId
-              if tTargetControlId is not empty then
-                put the rect of control id tTargetControlId into tControlRect
-                put item 2 of tControlRect into tTop
-                put item 4 of tControlRect into tBottom
-              end if
-            end if
-
-            if tProposedDropOperation is "above" then
-              put tTop into tY
-            else
-              put tBottom into tY
-            end if
-
-            put (item 4 of sDropStructure["default drop indicator rect"] \
-                  - item 2 of sDropStructure["default drop indicator rect"]) \
-                  / 2 div 1 into tDropIndicatorOffset ## div 1 = floor
-
-            lock messages
-            put item 1 of sDropStructure["default drop indicator rect"] into tX
-            put min(item 4 of tViewRect, max(item 2 of tViewRect + tDropIndicatorOffset, tY)) into tY ## don't let outside of the List group
-            put tY - tDropIndicatorOffset into tY
-            set the topLeft of group "dvDropIndicator" of me to tX, tY
-            unlock messages
-            dispatch "PositionDropIndicator" to group 1 of group "dvDropIndicator" of me with tDraggingInfoA, sDropStructure["drop row"], sDropStructure["drop operation"]
-          end if
-
+          lock messages
+          put item 1 of sDropStructure["default drop indicator rect"] into tX
+          put min(item 4 of tViewRect, max(item 2 of tViewRect + tDropIndicatorOffset, tY)) into tY ## don't let outside of the List group
+          put tY - tDropIndicatorOffset into tY
+          set the topLeft of group "dvDropIndicator" of me to tX, tY
+          unlock messages
+          dispatch "PositionDropIndicator" to group 1 of group "dvDropIndicator" of me with tDraggingInfoA, sDropStructure["drop row"], sDropStructure["drop operation"]
         end if
+
       end if
     end if
 
