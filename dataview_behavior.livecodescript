@@ -1954,11 +1954,19 @@ end dvTrackDragReorder
 /**
 Summary: Implementation of dragEnd for the view. Called from the frontscript.
 
+Description:
+Defined using `before` so that instance implementation doesn't need to worry about
+passing the message.
+
 */
-on dvDragEnd
+before dvDragEnd
   # Any data grid that had dvTrackDragReorder turned on during this drag event must be cleaned up.
-  dvResetViewsAffectedDuringDragOperation
-  remove script of stack "DataView Track Drag and Drop Behavior" from front
+  # Checking for presence of frontscript is necessary in situations where the user dragged content over
+  # multiple DataViews during the drag operation. The frontscript only needs to be removed once.
+  if the long id of stack "DataView Track Drag and Drop Behavior" is among the lines of the frontscripts then
+    dvResetViewsAffectedDuringDragOperation
+    remove script of stack "DataView Track Drag and Drop Behavior" from front
+  end if
 end dvDragEnd
 
 
