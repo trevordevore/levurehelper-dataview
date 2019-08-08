@@ -294,7 +294,7 @@ Each time `dragMove` is called, the DataView will calculate a proposed drop row 
 
 *Note:* If the drop will occur after the last row in the DataView then the proposed row will be the number of rows in the DataView + 1 and the proposed operation will be "above".
 
-The `ValidateRowDrop` handler can accept any of the above parameters by reference (parameter name prefixed with @)
+The `ValidateRowDrop` handler can accept any of the above parameters by reference (parameter name prefixed with `@`)
 and modify them. Modifying the proposed row and drop operation can be done if needed in order to redirect a drop.
 
 If the drop should not occur over the proposed row then return `false` from `ValidateRowDrop`.
