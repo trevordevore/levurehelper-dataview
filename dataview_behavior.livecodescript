@@ -1960,13 +1960,13 @@ Description:
 When dragDrop is triggered this handler will notify the view by dispatching
 `AcceptRowDrop` along with the following parameters:
 
-1. pDraggingInfoA: Array with `action` (dragAction), `mouseH`, and `mouseV` keys. Additional keys may have been added by the `ValidateRowDrop` command.
+1. pDraggingInfoA: Array with an `action` (dragAction) key. Additional keys may have been added by the `ValidateRowDrop` command.
 2. pRow: The row that the drop occurred on.
 3. pDropOperation: The drop operation. `on` or `above`.
 
 */
 on dvDragDrop
-  local tDraggingInfoA, processTheDrop, tDropStructure
+  local processTheDrop, tDropStructure
 
   ## Cache before we clean up
   if the dragAction is "move" AND sDropStructure["drop row"] is empty then put false into processTheDrop
@@ -1978,8 +1978,7 @@ on dvDragDrop
   dvFreezeMouseRelatedDragMessagesPriorToCleanup
 
   if processTheDrop then
-    put the dragAction into tDraggingInfoA["action"]
-    dispatch "AcceptRowDrop" with tDraggingInfoA, tDropStructure["drop row"], tDropStructure["drop operation"]
+    dispatch "AcceptRowDrop" with tDropStructure["info"], tDropStructure["drop row"], tDropStructure["drop operation"]
   end if
 end dvDragDrop
 
@@ -1992,17 +1991,17 @@ During dragMove this handler will calculate a proposed drop row and drop operati
 based on the position of the mouse. It will then dispatch `ValidateRowDrop` to the
 view and pass the following parameters:
 
-1. pDraggingInfoA: Array with `action` (dragAction), `mouseH`, and `mouseV` keys.
+1. pDraggingInfoA: Array with `action` (dragAction), `mouseH`, and `mouseV` keys. The `mouseH` and `mouseV` keys are the same parameters passed to `dragMove`.
 2. pProposedRow: The proposed row that the drop should occur on based on the mouse vertical position.
 3. pProposedDropOperation: The proposed drop operation based on the mouse vertical position. `on` or `above`.
 
-The `ValidateRowDrop` command can pass any of the above parameters by reference and modify them.
-Modifying the proposed row and drop operation can be done if needed in order to redirect a drop.
+The `ValidateRowDrop` handler can accept any of the above parameters by reference (parameter name prefixed with @)
+and modify them. Modifying the proposed row and drop operation can be done if needed in order to redirect a drop.
 
-If the drop should not occur on at all then return `false` from `ValidateRowDrop`.
+If the drop should not occur over the proposed row then return `false` from `ValidateRowDrop`.
 
 */
-on dvDragMove pMouseH,pMouseV
+on dvDragMove pMouseH, pMouseV
 
   ## Make sure data view control will accept drop
   if the dragSource contains the long ID of me and (the mouseControl is not empty and the long id of the mouseControl contains the long ID of me) then
@@ -2046,7 +2045,7 @@ on dvDragMove pMouseH,pMouseV
         # If closer to middle then operation = "on"
         # If closer to top then operation = "above"
         # If closer to bottom then + 1 and operation = "above"
-        local tDraggingInfoA, tProposedDropOperation, tProposedRow, tOrigProposedRow
+        local tProposedDropOperation, tProposedRow, tOrigProposedRow
         local tControlRect, tTop, tBottom, tHeight
         local tDropIndicatorOffset
 
@@ -2067,11 +2066,11 @@ on dvDragMove pMouseH,pMouseV
           put "on" into tProposedDropOperation
         end if
 
-        put the dragAction into tDraggingInfoA["action"]
-        put pMouseH into tDraggingInfoA["mouseH"]
-        put pMouseV into tDraggingInfoA["mouseV"]
+        put the dragAction into sDropStructure["info"]["action"]
+        put pMouseH into sDropStructure["info"]["mouseH"]
+        put pMouseV into sDropStructure["info"]["mouseV"]
 
-        dispatch "ValidateRowDrop" to me with tDraggingInfoA, tProposedRow, tProposedDropOperation
+        dispatch "ValidateRowDrop" to me with sDropStructure["info"], tProposedRow, tProposedDropOperation
         if the result is not false then
           local tX, tY
 
@@ -2105,9 +2104,12 @@ on dvDragMove pMouseH,pMouseV
           put tY - tDropIndicatorOffset into tY
           set the topLeft of group "dvDropIndicator" of me to tX, tY
           unlock messages
-          dispatch "PositionDropIndicator" to group 1 of group "dvDropIndicator" of me with tDraggingInfoA, sDropStructure["drop row"], sDropStructure["drop operation"]
+          dispatch "PositionDropIndicator" to group 1 of group "dvDropIndicator" of me with sDropStructure["info"], sDropStructure["drop row"], sDropStructure["drop operation"]
         end if
 
+        # No longer valid outside of this message
+        delete variable sDropStructure["info"]["mouseH"]
+        delete variable sDropStructure["info"]["mouseV"]
       end if
     end if
 
