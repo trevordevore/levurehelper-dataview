@@ -1816,34 +1816,6 @@ end dvMouseRelease
 
 --> Drag and Drop
 
-setprop dvDragReorderData pValue
-  put pValue into sDropStructure["drag drop data"]
-end dvDragReorderData
-
-
-getprop dvDragReorderData
-  return sDropStructure["drag drop data"]
-end dvDragReorderData
-
-
-/**
-Summary: Defines the default behavior for dvAcceptsDrop. Override in your dataview.
-
-Description:
-You can tell the DataView whether or not a drop can occur above or below a row. This handler
-is called whenever the DataView needs to decide if a drop can occur above or below a row.
-
-Define a `dvAcceptsDrop` getProp handler in your row template or DataView control that
-returns an array with an `above` and `below` key. Each is a boolean value.
-*/
-getProp dvAcceptsDrop
-  local theA
-  put true into theA["above"]
-  put true into theA["below"]
-  return theA
-end dvAcceptsDrop
-
-
 /**
 Summary: Sets the dragImage to a snapshot of a row.
 
@@ -1869,12 +1841,11 @@ end dvDragImageRow
 Summary: Begins a drag-reorder operation.
 
 Parameters:
-pOriginatingRows: The rows that the user started dragging.
 pBoolean: True to start the operation, false to stop.
 
 Returns: Error
 */
-setprop dvTrackDragReorder [pOriginatingRows] pBoolean
+setprop dvTrackDragReorder pBoolean
   if pBoolean is not sDropStructure["tracking"] then
     if pBoolean then
       local theDropIndicatorGroup, theContentRect, theRect
@@ -1885,9 +1856,6 @@ setprop dvTrackDragReorder [pOriginatingRows] pBoolean
       put true into sDropStructure["tracking"]
 
       DeleteFieldEditor true, "enterInField" ## close and save
-
-      sort items of pOriginatingRows ascending numeric
-      put pOriginatingRows into sDropStructure["originating rows"]
 
       put the viewProp["drop indicator template"] of me into theDropIndicatorGroup
       if theDropIndicatorGroup is empty then
@@ -4944,210 +4912,6 @@ command __updateScrollAnimation pScrollFrom, pScrollTo, pLastTime, pPhase, pPhas
 
   return empty
 end __updateScrollAnimation
-
-
-/**
-Summary: Positions the drop indicator during drag/drop operations.
-
-Parameters:
-pMouseH: The x mouse location.
-pMouseV: The y mouse position.
-
-Returns: empty
-*/
-private command _positionDropIndicator pMouseH, pMouseV
-  local i,theX,theY
-  local showDropIndicator, theDropIndicatorOffset
-  local theControl, theControlIndex
-  local theControlsToCheck, msgsAreLocked
-  local theWindowRect
-  local theHeight
-  local theSequence
-  local tStartControlId # The top control that defines the drop region
-  local tEndControlId # The bottom control that defines the drop region
-  local tTargetControlId
-
-  put the lockMessages into msgsAreLocked
-  set the wholeMatches to true
-  put false into showDropIndicator
-
-  put the viewProp["content window rect"] of me into theWindowRect
-
-  if (pMouseH & "," & pMouseV) is within theWindowRect then
-    if the mouseControl is not empty then
-      put true into showDropIndicator
-
-      if not (the long ID of the mouseControl contains the long ID of me) then
-        put false into showDropIndicator ## control over the list but not part of the list
-      else
-        local theTargetRow
-
-        put the short id of the dvRowControl of the mouseControl into tTargetControlId
-
-        if tTargetControlId is empty then
-          if pMouseV <= (item 2 of theWindowRect + the viewProp["content top padding"] of me + 1) then
-            # top padding area. Use first control.
-            put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(item 1 of sViewPropsA["controls"]["rows in use"])]["control"] into tTargetControlId
-          else
-            ## Assume we are below the last control
-            put sViewPropsA["controls"]["cache"][_getCacheKeyForRow(item -1 of sViewPropsA["controls"]["rows in use"])]["control"] into tTargetControlId
-          end if
-        end if
-
-        if tTargetControlId is empty then
-          put the dvAcceptsDrop of me is not false into showDropIndicator
-          put 0 into sDropStructure["dropped after row"] ## no controls in list
-        else
-          local theItemNo
-
-          put the dvRow of control id tTargetControlId into theTargetRow
-
-          ## Look for next/prev control that is not filtered out
-          ## Direction we look depends on position of mouse
-          ## relative to Y of control
-          put item 2 of the loc of control id tTargetControlId into theY
-
-          ## dvAcceptsDrop returns an array with "above" and "below" keys.
-          ## "none" means no drop should occur at all in that direction and searching stops.
-          ## true/false otherwise.
-
-          ## Look for start/end controls in our drop
-          local acceptsADrop, theStartAcceptsADrop, theEndAcceptsADrop
-
-          put the dvAcceptsDrop of control id tTargetControlId into theStartAcceptsADrop
-
-          ## Fill in some values if we already know what they are
-          if theStartAcceptsADrop["above"] is true then
-            put tTargetControlId into tStartControlId
-          end if
-
-          if theStartAcceptsADrop["below"] is true then
-            put tTargetControlId into tEndControlId
-            put theStartAcceptsADrop into theEndAcceptsADrop
-          end if
-
-          put itemOffset(theTargetRow, sViewPropsA["controls"]["rows in use"]) into theItemNo
-
-          local theRowsToCheck, theCacheKey
-
-          ## Now search for any missing values.
-          ## Look for next control that accepts a drop
-          ## Note that no search appears if the start control stopped all action below.
-          if tEndControlId is empty then
-            if theStartAcceptsADrop["below"] is not "none" then
-              put item (theItemNo + 1) to -1 of sViewPropsA["controls"]["rows in use"] into theRowsToCheck
-              repeat for each item theRow in theRowsToCheck
-                put _getCacheKeyForRow(theRow) into theCacheKey
-
-                put the dvAcceptsDrop of sViewPropsA["controls"]["cache"][theCacheKey]["control"] into acceptsADrop
-
-                if acceptsADrop["below"] is "none" then
-                  exit repeat
-                else if acceptsADrop["above"] is true OR acceptsADrop["below"] is true then
-                  put acceptsADrop into theEndAcceptsADrop
-                  put sViewPropsA["controls"]["cache"][theCacheKey]["control"] into tEndControlId
-                  exit repeat
-                end if
-              end repeat
-            end if
-          end if
-
-          ## Look for preceding control that accepts a drop
-          ## Note that no search appears if the start control stopped all action above.
-          if tStartControlId is empty then
-            if theStartAcceptsADrop["above"] is not "none" then
-              put item 1 to (theItemNo - 1) of sViewPropsA["controls"]["rows in use"] into theRowsToCheck
-
-              # Work our way down to 1
-              sort items of theRowsToCheck numeric descending
-
-              repeat for each item theRow in theRowsToCheck
-                put _getCacheKeyForRow(theRow) into theCacheKey
-
-                put the dvAcceptsDrop of sViewPropsA["controls"]["cache"][theCacheKey]["control"] into acceptsADrop
-
-                if acceptsADrop["above"] is "none" then
-                  exit repeat
-                else if acceptsADrop["above"] is true OR acceptsADrop["below"] is true then
-                  put acceptsADrop into theStartAcceptsADrop
-                  put sViewPropsA["controls"]["cache"][theCacheKey]["control"] into tStartControlId
-                  exit repeat
-                end if
-              end repeat
-            end if
-          end if
-
-          ## What is height of drop area as defined by start/end controls?
-          --               put "is:" && theStartControl & cr & tEndControlId
-          if tStartControlId is empty and tEndControlId is empty then
-            ## No drop. Hide the drop indicator
-            put false into showDropIndicator
-          else
-            if tStartControlId is empty then put tEndControlId into tStartControlId
-            else if tEndControlId is empty then put tStartControlId into tEndControlId
-
-            # Figure out the drop Y coordinate
-            put the bottom of control id tEndControlId - the top of control id tStartControlId into theHeight
-
-            if pMouseV < (the top of control id tStartControlId + round(theHeight / 2)) then
-              # Mouse is in top-half of drop zone
-              if theStartAcceptsADrop["above"] is true then
-                put the top of control id tStartControlId into theY
-                put max(the dvRow of control id tStartControlId-1, 0) into sDropStructure["dropped after row"]
-
-              else if theStartAcceptsADrop["below"] is true then
-                put the bottom of control id tStartControlId into theY
-                put the dvRow of control id tStartControlId into sDropStructure["dropped after row"]
-              else
-                put false into showDropIndicator
-              end if
-            else
-              # Mouse is in bottom half of drop zone
-              if theEndAcceptsADrop["below"] is true then
-                put the bottom of control id tEndControlId into theY
-                put the dvRow of control id tEndControlId into sDropStructure["dropped after row"]
-
-              else if theEndAcceptsADrop["above"] is true then
-                put the top of control id tEndControlId into theY
-                put max(the dvRow of control id tEndControlId-1, 0) into sDropStructure["dropped after row"]
-              else
-                put false into showDropIndicator
-              end if
-            end if
-
-            ## Position drop indicator
-            if showDropIndicator then
-              put (item 4 of sDropStructure["default drop indicator rect"] - item 2 of sDropStructure["default drop indicator rect"]) / 2 div 1 into theDropIndicatorOffset ## div 1 = floor
-
-              lock screen
-              lock messages
-              put item 1 of sDropStructure["default drop indicator rect"] into theX
-              put min(item 4 of theWindowRect, max(item 2 of theWindowRect + theDropIndicatorOffset, theY)) into theY ## don't let outside of the List group
-              put theY - theDropIndicatorOffset into theY
-              set the topLeft of group "dvDropIndicator" of me to theX, theY
-              unlock messages
-              dispatch "PositionDropIndicator" to group 1 of group "dvDropIndicator" of me with sDropStructure["dropped after row"]
-              unlock screen
-            end if
-          end if
-        end if
-      end if ## mousecontrol is part of list group control
-    else
-      ## mousecontrol is empty
-    end if
-
-  end if ## within rect of list
-
-  if not showDropIndicator then
-    put empty into sDropStructure["dropped after row"]
-  end if
-
-  set the lockMessages to msgsAreLocked
-
-  _setDropIndicatorVisibility showDropIndicator
-
-  return empty
-end _positionDropIndicator
 
 
 private command _setDropIndicatorVisibility pBoolean
