@@ -2045,6 +2045,8 @@ on dvDragMove pMouseH,pMouseV
 
     put the viewProp["content window rect"] of me into tViewRect
 
+    lock screen
+
     if (pMouseH & "," & pMouseV) is within tViewRect then
       if the mouseControl is not empty then
         local tTargetControlId
@@ -2120,7 +2122,6 @@ on dvDragMove pMouseH,pMouseV
                   - item 2 of sDropStructure["default drop indicator rect"]) \
                   / 2 div 1 into tDropIndicatorOffset ## div 1 = floor
 
-            lock screen
             lock messages
             put item 1 of sDropStructure["default drop indicator rect"] into tX
             put min(item 4 of tViewRect, max(item 2 of tViewRect + tDropIndicatorOffset, tY)) into tY ## don't let outside of the List group
@@ -2128,8 +2129,8 @@ on dvDragMove pMouseH,pMouseV
             set the topLeft of group "dvDropIndicator" of me to tX, tY
             unlock messages
             dispatch "PositionDropIndicator" to group 1 of group "dvDropIndicator" of me with tDraggingInfoA, sDropStructure["drop row"], sDropStructure["drop operation"]
-            unlock screen
           end if
+
         end if
       end if
     end if
@@ -2137,6 +2138,7 @@ on dvDragMove pMouseH,pMouseV
     _setDropIndicatorVisibility showDropIndicator
 
     set the lockMessages to msgsAreLocked
+    unlock screen
 
   catch e
     put param(0) && "error:" && e
