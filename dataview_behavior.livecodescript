@@ -1852,7 +1852,7 @@ setprop dvTrackDragReorder pBoolean
 
       ## Set right away
       ## This handler will be called from dragMove most likely. This message
-      ## can fired numerous times and we want getProp dvTrackDragReorder to return true immediately.
+      ## can be fired numerous times and we want getProp dvTrackDragReorder to return true immediately.
       put true into sDropStructure["tracking"]
 
       DeleteFieldEditor true, "enterInField" ## close and save
