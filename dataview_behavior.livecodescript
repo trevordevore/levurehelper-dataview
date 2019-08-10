@@ -580,7 +580,7 @@ If a row does not have a control associated with it then nothing will happen.
 Returns: empty
 */
 command RenderRows pRows
-  local theRow, theIndex
+  local tRowCount, theRow, theIndex
   local theDataA, theControlId, theStyle, theTopLeft
   local updateTheScrollbars = "false"
   local msgsAreLocked, theRowWidth, theCacheKey
@@ -593,8 +593,12 @@ command RenderRows pRows
 
   set the lockUpdates of group "dvList" of me to kLockUpdatesSetting
 
+  put the viewProp["number of rows"] of me into tRowCount
+
   ## Update existing rows
   repeat for each item theRow in pRows
+    if theRow < 1 or theRow > tRowCount then next repeat
+
     # Reset data array each time through loop
     put empty into theDataA
 
