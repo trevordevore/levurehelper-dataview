@@ -297,7 +297,9 @@ before mouseLeave
 
       put sCurrentMouseRowControl into tControl
       put empty into sCurrentMouseRowControl
-      dispatch "MouseLeaveRowControl" to tControl
+      if there is a tControl then
+        dispatch "MouseLeaveRowControl" to tControl
+      end if
     end if
   end if
 end mouseLeave
