@@ -258,6 +258,51 @@ on mouseRelease pMouseBtnNum
 end mouseRelease
 
 
+/**
+Summary: Implementation of `MouseEnterRowControl`/`MouseLeaveRowControl`.
+
+Description:
+As of LiveCode 9.5 there is no support for `mouseEnter`/`mouseLeave` messages that
+are sent to a group. The DataView synthesizes the `MouseEnterRowControl`/`MouseLeaveRowControl`
+messages to overcome this shortcoming.
+*/
+local sCurrentMouseRowControl
+
+before mouseEnter
+  local tControl
+
+  put the dvRowControl of the target into tControl
+  if tControl is not empty then
+    if sCurrentMouseRowControl is not empty and tControl is not sCurrentMouseRowControl then
+      dispatch "MouseLeaveRowControl" to sCurrentMouseRowControl
+    end if
+
+    put tControl into sCurrentMouseRowControl
+    dispatch "MouseEnterRowControl" to tControl
+  else
+    if there is a sCurrentMouseRowControl then
+      put sCurrentMouseRowControl into tControl
+      put empty into sCurrentMouseRowControl
+      dispatch "MouseLeaveRowControl" to tControl
+    end if
+  end if
+end mouseEnter
+
+
+before mouseLeave
+  if the mouseLoc is not within the rect of me or \
+        the mousecontrol is empty or the dvControl of the mousecontrol is not the dvControl of me then
+    if sCurrentMouseRowControl is not empty then
+      local tControl
+
+      put sCurrentMouseRowControl into tControl
+      put empty into sCurrentMouseRowControl
+      dispatch "MouseLeaveRowControl" to tControl
+    end if
+  end if
+end mouseLeave
+
+
 on touchStart pID
   local theIndex, theControl, theRow
 
