@@ -5208,7 +5208,7 @@ command CreateFieldEditorForField pField, pKey
   local msgsAreLocked, theClickLine, theRow
   local theClickField, theClickChunk
   local theMargins, theBorderWidth
-  local createEditorInThisGroup, theScrollSetting, theAnimSetting
+  local tRowControl, theScrollSetting, theAnimSetting
   local thisStackHasFocus
 
   ## Cache where the person clicked as this data will change if
@@ -5236,8 +5236,8 @@ command CreateFieldEditorForField pField, pKey
   ## Send message to behavior button as that is where script locals are stored.
   dispatch "SuspendFieldEditorClosing" to stack (the short name of this me) with _stackOf(the long id of me), false
 
-  put the dvRowControl of pField into createEditorInThisGroup
-  put the dvRow of createEditorInThisGroup into theRow
+  put the dvRowControl of pField into tRowControl
+  put the dvRow of tRowControl into theRow
   lock messages
 
   if thisStackHasFocus then
@@ -5283,17 +5283,22 @@ command CreateFieldEditorForField pField, pKey
     put the viewProp["scroll selections into view"] of me into theScrollSetting
     put the viewProp["animate selections"] of me into theAnimSetting
     set the viewProp["scroll selections into view"] of me to true
-    if not the visible of createEditorInThisGroup then
+    if not the visible of tRowControl then
       set the viewProp["animate selections"] of me to false ## don't animate to unseen controls
     end if
     set the dvHilitedRows of me to theRow
     set the viewProp["scroll selections into view"] of me to theScrollSetting
     set the viewProp["animate selections"] of me to theAnimSetting
+
+    # If control can't be selected then unset hilited rows
+    if not the dvCanSelect of tRowControl then
+      put empty into sViewPropsA["hilited rows"]
+    end if
   end if
 
   lock messages
 
-  create field kFieldEditorName in createEditorInThisGroup
+  create field kFieldEditorName in tRowControl
   put the long ID of it into sViewPropsA["field editor"]["control"]
 
   set the behavior of sViewPropsA["field editor"]["control"] to the long ID of stack "DataView Field Editor Behavior"
@@ -5350,7 +5355,9 @@ command CreateFieldEditorForField pField, pKey
   ## All of the scrolling around and unfocusing of controls will leave
   ## the row the field editor is in dimmed out. Explicitly highlight the
   ## row again.
-  _hiliteControl the short id of the dvRowControl of sViewPropsA["field editor"]["control"], true
+  if the dvCanSelect of tRowControl is not false then
+    _hiliteControl the short id of the dvRowControl of sViewPropsA["field editor"]["control"], true
+  end if
 
   local theFrontScriptButton
 
