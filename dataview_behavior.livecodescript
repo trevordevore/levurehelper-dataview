@@ -1303,6 +1303,9 @@ setProp viewProp [pProp] pValue
     case "content left padding"
     case "content top padding"
     case "content bottom padding"
+      if pValue is not a number then
+        put 0 into pValue
+      end if
       set the viewProp[pProp] of me to pValue
       ResizeToFit
       break
