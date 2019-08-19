@@ -671,6 +671,20 @@ command RenderVisibleRows
     end repeat
   end if ## startrow > 0
 
+  # Scroll top padding content
+  if there is a group "dvTopPaddingContent" of me then
+    put the short id of group "dvTopPaddingContent" of me into tControlId
+    if theStartRow is 1 and theStartRowYOffset < 0 then
+      if not the visible of control id tControlId then
+        set the visible of control id tControlId to true
+      end if
+      set the bottomleft of control id tControlId to \
+            the topleft of control id sViewPropsA["controls"]["cache"][_getCacheKeyForRow(1)]["control"]
+    else if the visible of control id tControlId then
+      set the visible of control id tControlId to false
+    end if
+  end if
+
   set the lockUpdates of group "dvList" of me to false
 
   if the viewProp["content height"] of me is not theOrigContentHeight then
@@ -1342,6 +1356,12 @@ setProp viewProp [pProp] pValue
       end if
       set the viewProp[pProp] of me to pValue
       break
+    case "top padding template"
+      if pValue is not empty then
+        put _customControlReference(pValue) into pValue
+      end if
+      set the viewProp[pProp] of me to pValue
+      break
     default
       set the viewProp[pProp] of me to pValue
       break
@@ -1523,13 +1543,15 @@ command dvMouseDownBefore pMouseBtnNum
 
   ## Bring focus into control. Do this before any possible exit points.
   if theRow is not empty then
-    ## Clicked on a control. Bring focus into control but away from scrollbar.
-    if the long ID of me is not in the long ID of the focusedObject or word 1 of the target is "scrollbar" or \
-          (sViewPropsA["field editor"]["control"] is not empty and sViewPropsA["field editor"]["control"] is the long ID of the focusedObject) then
+    ## Click on a row control. If focus isn't in the dvListMask itself then focus on background.
+    ## This accounts for clicks on the scrollbar (which shouldn't have focus) and when focus is in the
+    # dvTopPaddingContent group but should be removed.
+    if the long ID of group "dvListMask" is not in the long ID of the focusedObject \
+          or (sViewPropsA["field editor"]["control"] is not empty and sViewPropsA["field editor"]["control"] is the long ID of the focusedObject) then
       focus on graphic "dvBackground" of me
     end if
   else
-    ## clicked in space but no on list control
+    ## clicked in space but not on list control
     focus on graphic "dvBackground" of me
   end if
 
@@ -2946,6 +2968,8 @@ private command _renderView pRefreshDataInCachedControls
     _updateControlCacheForActiveRange 0, 0
   end if
 
+  _insertPaddingControl
+
   ## Start from scratch
   put empty into sViewPropsA["controls"]["rows in use"]
 
@@ -3612,6 +3636,34 @@ end _autoHideScrollbars
 
 
 /**
+Summary: Inserts controls into the padding areas of the DataView.
+
+Returns: nothing
+*/
+private command _insertPaddingControl
+  local msgsAreLocked, tControl
+
+  put the lockMessages into msgsAreLocked
+  lock messages
+
+  if there is a group "dvTopPaddingContent" of me then
+    delete group "dvTopPaddingContent" of me
+  end if
+
+  put the viewProp["top padding template"] of me into tControl
+  if there is a tControl then
+    copy tControl to me
+    set the name of it to "dvTopPaddingContent"
+    relayer it after group "dvListMask" of me
+    unlock messages
+    dispatch "FillInData" to it
+  end if
+
+  set the lockMessages to msgsAreLocked
+end _insertPaddingControl
+
+
+/**
 Summary: Caches controls for all rows in the view.
 
 Parameters:
@@ -3801,6 +3853,17 @@ private command _resizeSupportingControls
 
   set the rect of group "dvListMask" of me to tRect
   set the rect of group "dvList" of me to tRect
+
+  if there is a group "dvTopPaddingContent" of me then
+    local tPaddingRect
+    put the rect of group "dvTopPaddingContent" of me into tPaddingRect
+    put item 3 of tRect into item 3 of tPaddingRect
+
+    # This control should get the `resizeControl` message.
+    unlock messages
+    set the rect of group "dvTopPaddingContent" of me to tPaddingRect
+    lock messages
+  end if
 
   return empty
 end _resizeSupportingControls
