@@ -1546,7 +1546,7 @@ command dvMouseDownBefore pMouseBtnNum
     ## Click on a row control. If focus isn't in the dvListMask itself then focus on background.
     ## This accounts for clicks on the scrollbar (which shouldn't have focus) and when focus is in the
     # dvTopPaddingContent group but should be removed.
-    if the long ID of group "dvListMask" is not in the long ID of the focusedObject \
+    if the long ID of group "dvList" is not in the long ID of the focusedObject \
           or (sViewPropsA["field editor"]["control"] is not empty and sViewPropsA["field editor"]["control"] is the long ID of the focusedObject) then
       focus on graphic "dvBackground" of me
     end if
@@ -3652,9 +3652,9 @@ private command _insertPaddingControl
 
   put the viewProp["top padding template"] of me into tControl
   if there is a tControl then
-    copy tControl to me
+    copy tControl to group "dvListMask" of me
     set the name of it to "dvTopPaddingContent"
-    relayer it after group "dvListMask" of me
+    relayer it after group "dvList" of me
     unlock messages
     dispatch "FillInData" to it
   end if
