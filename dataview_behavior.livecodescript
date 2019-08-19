@@ -273,7 +273,7 @@ before mouseEnter
 
   put the dvRowControl of the target into tControl
   if tControl is not empty then
-    if sCurrentMouseRowControl is not empty and tControl is not sCurrentMouseRowControl then
+    if sCurrentMouseRowControl is not empty and there is a sCurrentMouseRowControl and tControl is not sCurrentMouseRowControl then
       dispatch "MouseLeaveRowControl" to sCurrentMouseRowControl
     end if
 
