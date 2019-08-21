@@ -1,6 +1,4 @@
 script "DataView Behavior"
-local sLastTargetedRow
-
 constant kLockUpdatesSetting = "true" # use for testing whether or not lockupdates makes a difference.
 
 constant kFieldEditorName = "dvFieldEditor"
@@ -18,8 +16,10 @@ constant kSBWidthLinux = 16
 constant kDefaultForNonCachedVariableHeightRows = 50
 
 local sInit
+local sWorkingGroupRect
 local sViewPropsA
 local sSystemA -- stores system specific settings
+local sLastTargetedRow
 local sScrollerID
 local sPendingMsgsA
 local sFieldEditor ## place holder until I decide what to do with editing.
@@ -49,7 +49,7 @@ end __InspectInternally
 Summary: Initializes internal data structures and creatres mobile scrollbar.
 */
 before preopenControl
-  _Init
+  _init
 
   if the environment is "mobile" then
     set the visible of scrollbar "dvVScrollbar" of me to false
@@ -821,6 +821,8 @@ Summary: Resizes the DataView rows to fit the current rect.
 Returns: empty
 */
 command ResizeToFit
+  put _workingGroupRect(the long id of me) into sWorkingGroupRect
+
   ## Throttle just in case developer tries to call this from different timers
   if sViewPropsA["running actions"]["resize to fit"] then
     put true into sViewPropsA["running actions"]["resend resize to fit"]
@@ -837,7 +839,7 @@ command ResizeToFit
   local theVScrollPercent, theLockLoc, msgsAreLocked, theMasterRect
   local theErrorToRethrow
 
-  put _workingGroupRect(the long id of me) into theMasterRect
+  put sWorkingGroupRect into theMasterRect
   put the viewProp["vscroll percent"] of me into theVScrollPercent
 
   put the lockLoc of me into theLockLoc
@@ -858,11 +860,11 @@ command ResizeToFit
         item 3 of theMasterRect - the width of scrollbar "dvVScrollbar" of me, \
         item 2 of theMasterRect, item 3 of theMasterRect, item 4 of theMasterRect - max(0, the viewProp["scrollbar corner offset"] of me)
 
-
   set the topleft of group "dvListMask" of me to item 1 of theMasterRect + max(0, the viewProp["content left padding"] of me), \
         item 2 of theMasterRect
   set the topleft of group "dvList" of me to the topleft of group "dvListMask" of me
-  set the visible of scrollbar "dvVScrollbar" of me to the environment is not "mobile" AND the viewProp["content height"] of me > _getContentWindowHeight()
+  set the visible of scrollbar "dvVScrollbar" of me to the environment is not "mobile" \
+        AND the viewProp["content height"] of me > _getContentWindowHeight()
   _resizeSupportingControls
 
   set the lockLoc of me to theLockLoc
@@ -2216,6 +2218,8 @@ private command _init
   if sInit then return empty
   put true into sInit
 
+  put _workingGroupRect(the long id of me) into sWorkingGroupRect
+
   set the opaque of me to false
   set the showborder of me to false
   set the showname of me to false
@@ -2909,7 +2913,7 @@ end _isThisModifierSetActive
 
 
 private function _getContentWindowHeight
-  return the height of group "dvListMask" of me
+  return item 4 of sWorkingGroupRect - item 2 of sWorkingGroupRect
 end _getContentWindowHeight
 
 
@@ -3657,6 +3661,8 @@ private command _insertPaddingControl
     relayer it after group "dvList" of me
     unlock messages
     dispatch "FillInData" to it
+
+    _resizePaddingControl
   end if
 
   set the lockMessages to msgsAreLocked
@@ -3842,12 +3848,13 @@ Returns: empty
 private command _resizeSupportingControls
   local tRect
 
-  put _workingGroupRect(the long id of me) into tRect
+  put sWorkingGroupRect into tRect
 
   add max(0, the viewProp["content left padding"] of me) to item 1 of tRect
   subtract max(0, the viewProp["content right padding"] of me) from item 3 of tRect
 
-  if the visible of scrollbar "dvVScrollbar" of me then
+  # Account for scrollbar if content height exceeds working group height
+  if the viewProp["content height"] of me > (item 4 of tRect - item 2 of tRect) then
     put min(the left of scrollbar "dvVScrollbar" of me, item 3 of tRect) into item 3 of tRect
   end if
 
@@ -3855,18 +3862,23 @@ private command _resizeSupportingControls
   set the rect of group "dvList" of me to tRect
 
   if there is a group "dvTopPaddingContent" of me then
-    local tPaddingRect
-    put the rect of group "dvTopPaddingContent" of me into tPaddingRect
-    put item 3 of tRect into item 3 of tPaddingRect
-
-    # This control should get the `resizeControl` message.
-    unlock messages
-    set the rect of group "dvTopPaddingContent" of me to tPaddingRect
-    lock messages
+    _resizePaddingControl
   end if
 
   return empty
 end _resizeSupportingControls
+
+
+private command _resizePaddingControl
+  local tPaddingRect
+  put the rect of group "dvTopPaddingContent" of me into tPaddingRect
+  put item 3 of sWorkingGroupRect into item 3 of tPaddingRect
+
+  # This control should get the `resizeControl` message.
+  unlock messages
+  set the rect of group "dvTopPaddingContent" of me to tPaddingRect
+  lock messages
+end _resizePaddingControl
 
 
 /**
