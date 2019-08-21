@@ -1990,6 +1990,11 @@ end dvDragDrop
 /**
 Summary: Implementation of dragMove for the view. Called from the frontscript.
 
+Parameters:
+pMouseH: The mouse x location as passed to dragMove.
+pMouseV: The mouse y location as passed to dragMove.
+pDragMoveTarget: The long id of the targte of
+
 Description:
 During dragMove this handler will calculate a proposed drop row and drop operation
 based on the position of the mouse. It will then dispatch `ValidateRowDrop` to the
@@ -2005,7 +2010,7 @@ and modify them. Modifying the proposed row and drop operation can be done if ne
 If the drop should not occur over the proposed row then return `false` from `ValidateRowDrop`.
 
 */
-on dvDragMove pMouseH, pMouseV
+on dvDragMove pMouseH, pMouseV, pDragMoveTarget
 
   ## Make sure data view control will accept drop
   if the dragSource contains the long ID of me and (the mouseControl is not empty and the long id of the mouseControl contains the long ID of me) then
@@ -2109,7 +2114,7 @@ on dvDragMove pMouseH, pMouseV
             put tY - tDropIndicatorOffset into tY
             set the topLeft of group "dvDropIndicator" of me to tX, tY
             unlock messages
-            dispatch "PositionDropIndicator" to group 1 of group "dvDropIndicator" of me with sDropStructure["info"], sDropStructure["drop row"], sDropStructure["drop operation"]
+            dispatch "PositionDropIndicator" to group 1 of group "dvDropIndicator" of me with pDragMoveTarget, sDropStructure["info"], sDropStructure["drop row"], sDropStructure["drop operation"]
           end if
 
           # No longer valid outside of this message

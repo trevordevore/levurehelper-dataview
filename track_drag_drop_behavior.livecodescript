@@ -62,7 +62,7 @@ on dragMove pMouseH,pMouseV
   local tControl
 
   repeat for each key tControl in sControlsA
-    dispatch "dvDragMove" to tControl with pMouseH, pMouseV
+    dispatch "dvDragMove" to tControl with pMouseH, pMouseV, the long id of the target
   end repeat
 
   pass dragMove
