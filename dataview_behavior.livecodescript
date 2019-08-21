@@ -5012,7 +5012,7 @@ pControlId: Id of control to use as the dragImage.
 Returns: empty
 */
 private command _createDragImageFromControl pControlId
-  local theImageOffset, isHilited
+  local tImageOffset, isHilited
 
   lock screen
 
@@ -5028,21 +5028,26 @@ private command _createDragImageFromControl pControlId
   end if
 
   unlock messages
+
   put the dvHilite of control id pControlId into isHilited
   set the dvHilite of control id pControlId to false
-  if there is a control "Background" of control id pControlId then set the visible of control "Background" of control id pControlId to false
+
+  # Set here so that implementor can modify it
+  put the clickH - the left of control id pControlId & comma & \
+        the clickV - the top of control id pControlId into tImageOffset
+  set the dragImageOffset to tImageOffset
 
   dispatch "PreDragImageSnapshot" to control id pControlId
-  export snapshot from control id pControlId to image "dvDragImage" of me as PNG
+  dispatch "CreateDragImageSnapshot" to control id pControlId with the short id of image "dvDragImage" of me
+  if it is not "handled" then
+    export snapshot from rect (the rect of control id pControlId) of control id pControlId \
+          to image "dvDragImage" of me as PNG
+  end if
   dispatch "PostDragImageSnapshot" to control id pControlId
 
   set the dvHilite of control id pControlId to isHilited
-  if there is a control "Background" of control id pControlId then set the visible of control "Background" of control id pControlId to true
 
   set the dragImage to the ID of image "dvDragImage" of me
-  put the clickH - the left of control id pControlId & comma & \
-        the clickV - the top of control id pControlId into theImageOffset
-  set the dragImageOffset to theImageOffset
 
   set the lockMessages to msgsAreLocked
   unlock screen
