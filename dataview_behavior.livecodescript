@@ -2115,6 +2115,8 @@ on dvDragMove pMouseH, pMouseV, pDragMoveTarget
             set the topLeft of group "dvDropIndicator" of me to tX, tY
             unlock messages
             dispatch "PositionDropIndicator" to group 1 of group "dvDropIndicator" of me with pDragMoveTarget, sDropStructure["info"], sDropStructure["drop row"], sDropStructure["drop operation"]
+          else
+            set the dragAction to "none"
           end if
 
           # No longer valid outside of this message
