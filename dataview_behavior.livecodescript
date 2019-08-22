@@ -1363,6 +1363,7 @@ setProp viewProp [pProp] pValue
         put _customControlReference(pValue) into pValue
       end if
       set the viewProp[pProp] of me to pValue
+      _insertPaddingControl
       break
     default
       set the viewProp[pProp] of me to pValue
