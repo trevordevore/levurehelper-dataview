@@ -265,11 +265,21 @@ Description:
 As of LiveCode 9.5 there is no support for `mouseEnter`/`mouseLeave` messages that
 are sent to a group. The DataView synthesizes the `MouseEnterRowControl`/`MouseLeaveRowControl`
 messages to overcome this shortcoming.
+
+`mouseEnter` handles both `MouseEnterRowControl` and `MouseLeaveRowControl` messages while the mouse
+moves around inside of the DataView. `mouseLeave` sends the `MouseLeaveRowControl` when the mouse
+leaves the DataView.
 */
 local sCurrentMouseRowControl
+local sMouseWithinDataView
 
 before mouseEnter
   local tControl
+
+  if not sMouseWithinDataView then
+    put true into sMouseWithinDataView
+    dispatch "MouseEnterDataView"
+  end if
 
   put the dvRowControl of the target into tControl
   if tControl is not empty then
@@ -289,7 +299,15 @@ before mouseEnter
 end mouseEnter
 
 
+/**
+Summary: mouseLeave is only necessary for sending messages when the mouse leaves the DataView as a whole.
+
+Returns: nothing
+*/
 before mouseLeave
+  # During this message the mouseLoc will be outside of the rect in most cases.
+  # It is possible that a control slightly overlaps the DataView, however, which
+  # is why there is a check for a matching dvControl as well.
   if the mouseLoc is not within the rect of me or \
         the mousecontrol is empty or the dvControl of the mousecontrol is not the dvControl of me then
     if sCurrentMouseRowControl is not empty then
@@ -301,6 +319,9 @@ before mouseLeave
         dispatch "MouseLeaveRowControl" to tControl
       end if
     end if
+
+    put false into sMouseWithinDataView
+    dispatch "MouseLeaveDataView"
   end if
 end mouseLeave
 
