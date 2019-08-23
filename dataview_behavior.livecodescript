@@ -4512,6 +4512,7 @@ private function _getControlIdOfStyle pStyle
 
       ## Make sure a style is set
       set the dvTemplateStyle of control id tControlId to pStyle
+      set the topleft of control id tControlId to the topleft of group "dvList" of me
 
       set the lockMessages to msgsAreLocked
     end if
