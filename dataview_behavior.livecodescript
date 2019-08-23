@@ -287,8 +287,10 @@ before mouseEnter
       dispatch "MouseLeaveRowControl" to sCurrentMouseRowControl
     end if
 
-    put tControl into sCurrentMouseRowControl
-    dispatch "MouseEnterRowControl" to tControl
+    if tControl is not sCurrentMouseRowControl then
+      put tControl into sCurrentMouseRowControl
+      dispatch "MouseEnterRowControl" to tControl
+    end if
   else
     if there is a sCurrentMouseRowControl then
       put sCurrentMouseRowControl into tControl
