@@ -306,7 +306,7 @@ Summary: mouseLeave is only necessary for sending messages when the mouse leaves
 
 Returns: nothing
 */
-before mouseLeave
+after mouseLeave
   # During this message the mouseLoc will be outside of the rect in most cases.
   # It is possible that a control slightly overlaps the DataView, however, which
   # is why there is a check for a matching dvControl as well.
@@ -325,6 +325,23 @@ before mouseLeave
     put false into sMouseWithinDataView
     dispatch "MouseLeaveDataView"
   end if
+end mouseLeave
+
+
+/**
+Summary: Ensures that `the mouseLoc` does not return a negative y value.
+
+Description:
+During testing it was observed that `the mouseLoc` in `after mouseLeave` would
+return a negative value for the y coordinate unless the DataView also defined
+the `on mouseLeave` handler. The root cause has not been found but this fixes
+the problem.
+
+Returns: nothing
+*/
+on mouseLeave
+
+  pass mouseLeave
 end mouseLeave
 
 
