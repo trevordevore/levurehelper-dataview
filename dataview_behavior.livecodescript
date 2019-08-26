@@ -273,8 +273,27 @@ leaves the DataView.
 local sCurrentMouseRowControl
 local sMouseWithinDataView
 
+
 before mouseEnter
   local tControl
+
+  /*
+  Observed behavior:
+  Take a row control that has an icon which is shown on MouseEnterRowControl and
+  hidden on MouseLeaveRowControl. While visible, the user can click on it to show a
+  popup menu. If the user moves the mouse around to other controls in the row control
+  while the popup menu is visible, and then dismisses the menu while the mouse is outside
+  of the DataView (by click or using escape key), an endless loop of mouseLeave/mouseEnter
+  messages will be generated while the icon is being shown/hidden repeatedly.
+
+  I understand why mouseLeave is sent to the control. It is unclear why mouseEnter would
+  be sent again as the mouse isn't over the control. That appears to be a bug.
+
+  This check ensures that this endless loop doesn't occur.
+  */
+  if the mouseLoc is not within the rect of me then
+    exit mouseEnter
+  end if
 
   if not sMouseWithinDataView then
     put true into sMouseWithinDataView
@@ -283,11 +302,11 @@ before mouseEnter
 
   put the dvRowControl of the target into tControl
   if tControl is not empty then
-    if sCurrentMouseRowControl is not empty and there is a sCurrentMouseRowControl and tControl is not sCurrentMouseRowControl then
-      dispatch "MouseLeaveRowControl" to sCurrentMouseRowControl
-    end if
-
     if tControl is not sCurrentMouseRowControl then
+      if sCurrentMouseRowControl is not empty and there is a sCurrentMouseRowControl then
+        dispatch "MouseLeaveRowControl" to sCurrentMouseRowControl
+      end if
+
       put tControl into sCurrentMouseRowControl
       dispatch "MouseEnterRowControl" to tControl
     end if
@@ -298,6 +317,22 @@ before mouseEnter
       dispatch "MouseLeaveRowControl" to tControl
     end if
   end if
+end mouseEnter
+
+
+/**
+Summary: Ensures that `the mouseLoc` does not return a negative y value.
+
+Description:
+During testing it was observed that `the mouseLoc` in `after mouseUp` would
+return a negative value for the y coordinate unless the DataView also defined
+the `on mouseUp` handler. The root cause has not been found but this fixes
+the problem.
+
+Returns: nothing
+*/
+on mouseEnter
+  pass mouseEnter
 end mouseEnter
 
 
@@ -340,7 +375,6 @@ the problem.
 Returns: nothing
 */
 on mouseLeave
-
   pass mouseLeave
 end mouseLeave
 
