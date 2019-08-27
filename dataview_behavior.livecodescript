@@ -748,7 +748,12 @@ command RenderVisibleRows
   # Scroll top padding content
   if there is a group "dvTopPaddingContent" of me then
     put the short id of group "dvTopPaddingContent" of me into tControlId
-    if theStartRow is 1 and theStartRowYOffset < 0 then
+    if theStartRow is 0 then
+      if not the visible of control id tControlId then
+        set the visible of control id tControlId to true
+      end if
+      set topleft of control id tControlId to the topleft of group "dvList" of me
+    else if theStartRow is 1 and theStartRowYOffset < 0 then
       if not the visible of control id tControlId then
         set the visible of control id tControlId to true
       end if
