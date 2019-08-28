@@ -297,24 +297,28 @@ before mouseEnter
 
   if not sMouseWithinDataView then
     put true into sMouseWithinDataView
-    dispatch "MouseEnterDataView"
+    dispatch "MouseEnterDataView" to me
   end if
 
   put the dvRowControl of the target into tControl
+  if tControl is empty then
+    put the dvPaddingControl of the target into tControl
+  end if
+
   if tControl is not empty then
     if tControl is not sCurrentMouseRowControl then
       if sCurrentMouseRowControl is not empty and there is a sCurrentMouseRowControl then
-        dispatch "MouseLeaveRowControl" to sCurrentMouseRowControl
+        dispatch "MouseLeaveControl" to sCurrentMouseRowControl
       end if
 
       put tControl into sCurrentMouseRowControl
-      dispatch "MouseEnterRowControl" to tControl
+      dispatch "MouseEnterControl" to tControl
     end if
   else
     if there is a sCurrentMouseRowControl then
       put sCurrentMouseRowControl into tControl
       put empty into sCurrentMouseRowControl
-      dispatch "MouseLeaveRowControl" to tControl
+      dispatch "MouseLeaveControl" to tControl
     end if
   end if
 end mouseEnter
@@ -353,12 +357,12 @@ after mouseLeave
       put sCurrentMouseRowControl into tControl
       put empty into sCurrentMouseRowControl
       if there is a tControl then
-        dispatch "MouseLeaveRowControl" to tControl
+        dispatch "MouseLeaveControl" to tControl
       end if
     end if
 
     put false into sMouseWithinDataView
-    dispatch "MouseLeaveDataView"
+    dispatch "MouseLeaveDataView" to me
   end if
 end mouseLeave
 
@@ -504,6 +508,10 @@ command ResetView
   repeat with i = 1 to the number of controls of group "dvList" of me
     delete control 1 of group "dvList" of me
   end repeat
+
+  if there is a group "dvTopPaddingContent" of me then
+    delete group "dvTopPaddingContent" of me
+  end if
 
   set the viewProp["vscroll"] of me to 0
   set the viewProp["first working row"] of me to 0
@@ -3727,25 +3735,24 @@ Returns: nothing
 private command _insertPaddingControl
   local msgsAreLocked, tControl
 
-  put the lockMessages into msgsAreLocked
-  lock messages
+  if there is not a group "dvTopPaddingContent" of me then
+    put the lockMessages into msgsAreLocked
+    lock messages
 
-  if there is a group "dvTopPaddingContent" of me then
-    delete group "dvTopPaddingContent" of me
+    put the viewProp["top padding template"] of me into tControl
+    if there is a tControl then
+
+      copy tControl to group "dvListMask" of me
+      set the name of it to "dvTopPaddingContent"
+      relayer it after group "dvList" of me
+      unlock messages
+      dispatch "FillInData" to it
+
+      _resizePaddingControl
+    end if
+
+    set the lockMessages to msgsAreLocked
   end if
-
-  put the viewProp["top padding template"] of me into tControl
-  if there is a tControl then
-    copy tControl to group "dvListMask" of me
-    set the name of it to "dvTopPaddingContent"
-    relayer it after group "dvList" of me
-    unlock messages
-    dispatch "FillInData" to it
-
-    _resizePaddingControl
-  end if
-
-  set the lockMessages to msgsAreLocked
 end _insertPaddingControl
 
 
