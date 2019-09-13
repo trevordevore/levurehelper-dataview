@@ -3828,7 +3828,6 @@ private command _setupRowControl pRow, pRowControlId, pForceFillInData
 
   ## Implemented by instance of behavior
   dispatch "DataForRow" to me with pRow, theDataA, theStyle
-  put pRowControlId is empty into cacheTheControl
 
   if theStyle is empty then put "default" into theStyle
 
@@ -3837,6 +3836,8 @@ private command _setupRowControl pRow, pRowControlId, pForceFillInData
     _cleanupControl _getCacheKeyForRow(pRow), pRow, pRowControlId, true
     put empty into pRowControlId
   end if
+
+  put pRowControlId is empty into cacheTheControl
 
   if pRowControlId is empty then
     put _getControlIdOfStyle(theStyle) into pRowControlId
