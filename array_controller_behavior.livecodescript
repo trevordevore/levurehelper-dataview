@@ -193,6 +193,20 @@ end dvRowData
 
 
 /**
+Summary: Sets the data associated with a row.
+
+Parameters:
+pRow: The row to update.
+pDataA: The array to assign to the row.
+
+Returns: nothing
+*/
+setProp dvRowData[pRow] pDataA
+  put pDataA into sDataA[pRow]
+end dvRowData
+
+
+/**
 Summary: Returns the row id associated with `pRow`.
 
 Parameters:
