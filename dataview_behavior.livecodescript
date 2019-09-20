@@ -259,15 +259,15 @@ end mouseRelease
 
 
 /**
-Summary: Implementation of `MouseEnterRowControl`/`MouseLeaveRowControl`.
+Summary: Implementation of `MouseEnterControl`/`MouseLeaveControl` and `MouseEnterDataView/MouseLeaveControl` messages.
 
 Description:
 As of LiveCode 9.5 there is no support for `mouseEnter`/`mouseLeave` messages that
-are sent to a group. The DataView synthesizes the `MouseEnterRowControl`/`MouseLeaveRowControl`
+are sent to a group. The DataView synthesizes the `MouseEnterControl`/`MouseLeaveControl`
 messages to overcome this shortcoming.
 
-`mouseEnter` handles both `MouseEnterRowControl` and `MouseLeaveRowControl` messages while the mouse
-moves around inside of the DataView. `mouseLeave` sends the `MouseLeaveRowControl` when the mouse
+`mouseEnter` handles both `MouseEnterControl` and `MouseLeaveControl` messages while the mouse
+moves around inside of the DataView. `mouseLeave` sends the `MouseLeaveControl` when the mouse
 leaves the DataView.
 */
 local sCurrentMouseRowControl
