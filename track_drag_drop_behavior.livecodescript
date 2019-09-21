@@ -42,28 +42,15 @@ end dragDrop
 Summary: Restore pre-drag state after drag operation is complete.
 
 Description: After the drag is finished we need to reset any DataViews that
-were part of the drag operation. If a DataView is the target of the dragEnd
-message then dispatch the message to it. If not then dispatch to any one of
-the DataViews.
+were part of the drag operation.
 */
 on dragEnd
   local tControl
   local tFoundAMatch = "false"
 
   repeat for each key tControl in sControlsA
-    if tControl is in the long id of the target then
-      dispatch "dvDragEnd" to tControl
-      put true into tFoundAMatch
-      exit repeat
-    end if
+    dispatch "dvDragEnd" to tControl
   end repeat
-
-  if not tFoundAMatch then
-    put line 1 of the keys of sControlsA into tControl
-    if tControl is not empty then
-      dispatch "dvDragEnd" to tControl
-    end if
-  end if
 
   pass dragEnd
 end dragEnd
@@ -75,7 +62,7 @@ on dragMove pMouseH,pMouseV
   local tControl
 
   repeat for each key tControl in sControlsA
-    dispatch "dvDragMove" to tControl with pMouseH, pMouseV
+    dispatch "dvDragMove" to tControl with pMouseH, pMouseV, the long id of the target
   end repeat
 
   pass dragMove

@@ -1,12 +1,12 @@
 # DataView Helper
 
-A DataView displays rows of data. It is similar to a DataGrid form, a control available in the LiveCode IDE. 
+A DataView displays rows of data. It is similar to a DataGrid form, a control available in the LiveCode IDE.
 
 LiveCode Version: 8.x or higher
 
 Platforms: Tested on Windows, macOS, and iOS.
 
-A DataView is responsible for taking row data that your code provides and rendering it in a highly customizable way using row templates. Row data is an array of key=>value pairs. Out of the box you can assign a numerically indexed array of arrays with key=>value pairs to a DataView (see example below). But you can customize the data source any way you would like. 
+A DataView is responsible for taking row data that your code provides and rendering it in a highly customizable way using row templates. Row data is an array of key=>value pairs. Out of the box you can assign a numerically indexed array of arrays with key=>value pairs to a DataView (see example below). But you can customize the data source any way you would like.
 
 ## Demo
 
@@ -27,7 +27,7 @@ The DataView helper includes two commands which can create DataView group contro
 dvIdeCreateDataViewControl "My DataView", empty, the long id of stack "DataView Array Controller Behavior"
 ```
 
-`dvIdeCreateDataViewControlUsingDialog` will display a dialog with additional options. `pTargetCard` and `pBehavior` behave the same way as for `dvIdeCreateDataViewControl`. 
+`dvIdeCreateDataViewControlUsingDialog` will display a dialog with additional options. `pTargetCard` and `pBehavior` behave the same way as for `dvIdeCreateDataViewControl`.
 
 The modal dialog that appears has a couple of additional options:
 
@@ -78,7 +78,7 @@ Each row in a DataView is rendered using a row template. A row template is simpl
 
 ### Mapping row template groups to row styles
 
-Each row in a DataView has a style assigned to it. The default style is `default` and that is the only style that is supported if you are using the data controller behavior script assigned to a DataView by default. If you create a [custom data controller script](#Creating-a-custom-data-controller) then you can use style names of your choosing. 
+Each row in a DataView has a style assigned to it. The default style is `default` and that is the only style that is supported if you are using the data controller behavior script assigned to a DataView by default. If you create a [custom data controller script](#Creating-a-custom-data-controller) then you can use style names of your choosing.
 
 Each style needs to be mapped to a group serving as a row template. You map a row template group to a row style through the `row style templates` property of a DataView. This property is an array whose keys are style names and values are a reference to a group control. Here is a simple example:
 
@@ -88,7 +88,7 @@ put the long id of group "MyRowTemplate" of stack "MyRowTemplateStack" \
 set the viewProp["row style templates"] of group "MyDataView" to tStyleTemplatesA
 ```
 
-After running the above code all rows in the "MyDataView" DataView would use the "MyRowTemplate" group as the row template. 
+After running the above code all rows in the "MyDataView" DataView would use the "MyRowTemplate" group as the row template.
 
 If your DataView needs more than one row template than you can use multiple styles. For example:
 
@@ -211,7 +211,7 @@ end NumberOfRows
 
 ### CacheKeyForRow function
 
-The `CacheKeyForRow()` function must return a unique identifier for each row. If you don't define the `CacheKeyForRow()` function in the message path then the DataView will use the row number to uniquely identify each row. If your DataView is displaying a flat list of data that cannot be reordered and that never toggles the visibility of rows then there is nothing further that needs to be done. 
+The `CacheKeyForRow()` function must return a unique identifier for each row. If you don't define the `CacheKeyForRow()` function in the message path then the DataView will use the row number to uniquely identify each row. If your DataView is displaying a flat list of data that cannot be reordered and that never toggles the visibility of rows then there is nothing further that needs to be done.
 
 If, however, the row that data in your data source is associated with can change between calls to `ResetView` then you must handle `CacheKeyForRow()` and return a unique identifier for the row. For example, the primary key column from a database table will be adequate in most cases. If your DataView is displaying records from multiple tables then the primary key might not be sufficient as the primary keys from two different tables aren't necessarily unique.
 
@@ -272,3 +272,74 @@ and caching is not turned on.
 ## The `animate selections` property
 
 The DataView can animate selections of rows that are not currently in view. You need to set the `viewProp["animate selections"]` property to true and have the [animationEngine](https://github.com/derbrill/animationEngine) library in use.
+
+## The Drag Reordering API
+
+The DataView has a built in API for drag reordering. To start a drag operation do the following:
+
+1. Define a `dragStart` handler in your instance of the DataView.
+2. In the handler set `the dvDragImageRow of me` to the first row that is being dragged. This can be done using `item 1 of the dvHilitedRows of me` of the DataView.
+3. In the handler set `the dragData["private"]` to a string that contains the necessary information for the drop. For example, line 1 of the string might be an identifier such as "file nodes" and line 2 would be `the dvHilitedRows of me`.
+4. In the handler set `the dvTrackDragReorder of me to true`
+
+At this point you will see visual feedback. A snapshot of the hilited row will follow the mouse around and a drop indicator will show where the drop will occur.
+
+### ValidateRowDrop
+
+Each time `dragMove` is called, the DataView will calculate a proposed drop row and drop operation based on the position of the mouse. It will then dispatch `ValidateRowDrop` to the DataView and pass the following parameters:
+
+1. pDraggingInfoA: Array with `action` (dragAction), `mouseH`, and `mouseV` keys. The `mouseH` and `mouseV` keys are the same parameters passed to `dragMove`.
+2. pProposedRow: The proposed row that the drop should occur on based on the mouse vertical position.
+3. pProposedDropOperation: The proposed drop operation based on the mouse vertical position. `on` or `above`.
+
+*Note:* If the drop will occur after the last row in the DataView then the proposed row will be the number of rows in the DataView + 1 and the proposed operation will be "above".
+
+The `ValidateRowDrop` handler can accept any of the above parameters by reference (parameter name prefixed with `@`)
+and modify them. Modifying the proposed row and drop operation can be done if needed in order to redirect a drop.
+
+If the drop should not occur over the proposed row then return `false` from `ValidateRowDrop`.
+
+### AcceptRowDrop
+
+When `dragDrop` is called as a result of the user "dropping" a row on the DataView your instance of the DataView will be notified with the `AcceptRowDrop` message. It will be sent the following parameters:
+
+1. pDraggingInfoA: Array with an `action` (dragAction). In addition, if keys were added to the `pDraggingInfoA` array passed by refernece to `ValidateRowDrop` the those keys will be present as well.
+2. pRow: The row that the drop occurred on.
+3. pDropOperation: The drop operation. `on` or `above`.
+
+This handler is where you write your application specific logic that reorders the data.
+
+### Customizing the row snapshot when setting the dvDragImageRow
+
+When the `dvDragImageRow` property is set a snapshot of the corresponding row control is taken and assigned to the `dragImage` property. Two messages are sent to the row control which allow you to customize the row control prior to the snapshot being taken - `PreDragImageSnapshot` and `PostDragImageSnapshot`. In `PreDragImageSnapshot` you make any customizations to the row control. In `PostDragImageSnapshot` you restore the row control to it's prior state.
+
+These handlers can be defined in the row control behavior script or in the DataView instance script.
+
+### Customizing the drop indicator
+
+The drop indicator (the line that shows you where the drop will occur) is determined by the `viewProp["drop indicator template"]` custom property of the DataView. This property can be assigned the long id of a control (it will be converted to a rugged id when stored). If the property is empty then the drop indicator that is included with the DataView is used.
+
+If you define your own control to use as a drop indicator then it needs a script with the following handler:
+
+```
+command PositionDropIndicator pDraggingInfoA, pRow, pDropOperation
+  # Resize the control...
+end PositionDropIndicator
+```
+
+Before this handler is called, the control will be have it's width resized to the width of the DataView.
+
+The default drop indicator template is a group with a script similar to the following:
+
+```
+command PositionDropIndicator pDraggingInfoA, pRow, pDropOperation
+  local tViewRect, tRect
+
+  put the rect of me into tViewRect
+
+  put the rect of graphic 1 of me into tRect
+  put item 1 of tViewRect into item 1 of tRect
+  put item 3 of tViewRect + 1 into item 3 of tRect
+  set the rect of graphic 1 of me to tRect
+end PositionDropIndicator
+```
