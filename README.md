@@ -21,7 +21,7 @@ The DataView helper includes two commands which can create DataView group contro
 - `dvIdeCreateDataViewControl pName, pTargetCard, pBehavior`
 - `dvIdeCreateDataViewControlUsingDialog pTargetCard, pBehavior, pRowStyleTemplateGroupsA`
 
-`dvIdeCreateDataViewControl` will create a DataView with no additional input. The only required parametr is `pName` which will be the name of the group that is created. If `pTargetCard` is empty then the DataView group control will be added to the current card of the `topStack`. If you would like to assign a behavior to the DataView group control other than the "DataView Behavior" stack then pass a reference to it in `pBehavior`. For example, if you want to create a new DataView group control in the current card of the `topStack` that uses the DataView Array controller then you would make the following call:
+`dvIdeCreateDataViewControl` will create a DataView with no additional input. The only required parameter is `pName` which will be the name of the group that is created. If `pTargetCard` is empty then the DataView group control will be added to the current card of the `topStack`. If you would like to assign a behavior to the DataView group control other than the "DataView Behavior" stack then pass a reference to it in `pBehavior`. For example, if you want to create a new DataView group control in the current card of the `topStack` that uses the DataView Array controller then you would make the following call:
 
 ```
 dvIdeCreateDataViewControl "My DataView", empty, the long id of stack "DataView Array Controller Behavior"
@@ -106,7 +106,7 @@ After running the above code you could assign either the `heading` or `paragraph
 
 Row templates should be stored in the `.app/templates` folder of a Levure project. Stacks in this folder are treated like a `ui` stack in that they are not loaded into memory at startup but will be loaded when the stack name is referenced in code.  What is different is that stacks in the `./app/template` folder will not be password protected which means their contents can be copied into a DataView in a standalone that is otherwise password protected.
 
-Like the `ui` folder, each folder in the `templates` folder contains one or more livecode stacks as well as the supporting behavior script files. Here is an example of a `./app/templates/my-row-template/` folder that stores the behavior in a script only stack:
+Like the `ui` folder, each folder in the `templates` folder contains one or more LiveCode stacks as well as the supporting behavior script files. Here is an example of a `./app/templates/my-row-template/` folder that stores the behavior in a script only stack:
 
 ```
 ./app/templates/my-row-template/my-row-template.livecode
@@ -118,7 +118,7 @@ Each stack should have the following properties:
 1. The stack has one card.
 2. The card has one or more groups serving as a row template.
 3. Each group has a behavior assigned to it.
-4. If the behavior is stored in a script only stack then then assign the behavior script only stack file to the `stackFiles` property of the stack the group is a part of.
+4. If the behavior is stored in a script only stack then then assign the script only stack file to the `stackFiles` property of the stack the group is a part of.
 
 
 `InitializeTemplate`
@@ -152,7 +152,7 @@ pDirection: next/previous
 
 A DataView doesn't have any internal knowledge of the data that it is displaying. Each time it displays a row it asks the outside world to provide the data for that row. When it needs to know how many total rows it should display it also asks the outside world. The code that provides that data can be thought of a data controller. The data controller script orchestrates moving data from a data source into a DataView and saving any changes made to data within the DataView back to the data source.
 
-The DataView helper comes with a data controller script (`dataview_controller.livecodescript`) that is assigned as a behavior of a new DataView. This data controller script allows you to assign a numerically indexed array of data to the `uData` property of the DataView. It will then handle feeding the data in that array to the DataView.
+The DataView helper comes with a data controller script (`dataview_controller.livecodescript`) that is assigned as a behavior of a new DataView. This data controller script allows you to assign a numerically indexed array of data to the `dvData` property of the DataView. It will then handle feeding the data in that array to the DataView.
 
 For more advanced cases you can remove this data controller script as the behavior and use your own data controller code. That code can reside in a different behavior script that you assign to the DataView or it might exist in another script in the message hierarchy – e.g. a `group` that the DataView is in or in the `card` or `stack` script. Regardless of where your data controller code is located, you will need to handle one message and two functions. The message is `DataForRow` and the functions are `NumberOfRows()` and `CacheKeyForRow()`. These handlers will be sent and called when you send the `RenderView` command to the DataView.
 
@@ -278,17 +278,17 @@ The DataView can animate selections of rows that are not currently in view. You 
 The DataView has a built in API for drag reordering. To start a drag operation do the following:
 
 1. Define a `dragStart` handler in your instance of the DataView.
-2. In the handler set `the dvDragImageRow of me` to the first row that is being dragged. This can be done using `item 1 of the dvHilitedRows of me` of the DataView.
+2. In the handler set `the dvDragImageRow of me` to the first row that is being dragged. In most cases you can set the property to `item 1 of the dvHilitedRows of me` of the DataView.
 3. In the handler set `the dragData["private"]` to a string that contains the necessary information for the drop. For example, line 1 of the string might be an identifier such as "file nodes" and line 2 would be `the dvHilitedRows of me`.
 4. In the handler set `the dvTrackDragReorder of me to true`
 
-At this point you will see visual feedback. A snapshot of the hilited row will follow the mouse around and a drop indicator will show where the drop will occur.
+At this point you will see visual feedback. A snapshot of `the dvDragImageRow` will follow the mouse around and a drop indicator will show where the drop will occur.
 
 ### ValidateRowDrop
 
 Each time `dragMove` is called, the DataView will calculate a proposed drop row and drop operation based on the position of the mouse. It will then dispatch `ValidateRowDrop` to the DataView and pass the following parameters:
 
-1. pDraggingInfoA: Array with `action` (dragAction), `mouseH`, and `mouseV` keys. The `mouseH` and `mouseV` keys are the same parameters passed to `dragMove`.
+1. pDraggingInfoA: Array with `action` (the value of `dragAction`), `mouseH`, and `mouseV` keys. The `mouseH` and `mouseV` keys are the same parameters passed to `dragMove`.
 2. pProposedRow: The proposed row that the drop should occur on based on the mouse vertical position.
 3. pProposedDropOperation: The proposed drop operation based on the mouse vertical position. `on` or `above`.
 
@@ -303,17 +303,21 @@ If the drop should not occur over the proposed row then return `false` from `Val
 
 When `dragDrop` is called as a result of the user "dropping" a row on the DataView your instance of the DataView will be notified with the `AcceptRowDrop` message. It will be sent the following parameters:
 
-1. pDraggingInfoA: Array with an `action` (dragAction). In addition, if keys were added to the `pDraggingInfoA` array passed by refernece to `ValidateRowDrop` the those keys will be present as well.
+1. pDraggingInfoA: Array with an `action` (the `dragAction`). In addition, if keys were added to the `pDraggingInfoA` array passed by reference to `ValidateRowDrop` the those keys will be present as well.
 2. pRow: The row that the drop occurred on.
 3. pDropOperation: The drop operation. `on` or `above`.
 
-This handler is where you write your application specific logic that reorders the data.
+This handler is where you write your application specific logic that reorders the data in the data source and refreshes the DataView.
 
 ### Customizing the row snapshot when setting the dvDragImageRow
 
-When the `dvDragImageRow` property is set a snapshot of the corresponding row control is taken and assigned to the `dragImage` property. Two messages are sent to the row control which allow you to customize the row control prior to the snapshot being taken - `PreDragImageSnapshot` and `PostDragImageSnapshot`. In `PreDragImageSnapshot` you make any customizations to the row control. In `PostDragImageSnapshot` you restore the row control to it's prior state.
+When the `dvDragImageRow` property is set a snapshot of the corresponding row control is taken and assigned to the `dragImage` property. Three messages are sent to the row control which allow you to customize the the snapshot that is taken - `PreDragImageSnapshot`, `CreateDragImageSnapshot`, and `PostDragImageSnapshot`.
 
-These handlers can be defined in the row control behavior script or in the DataView instance script.
+1. `PreDragImageSnapshot`: Make any customizations to the row control prior to the snapshot being taken. For example, you might hide controls in the row group control such as action menus and just leave a label field visible.
+2. `CreateDragImageSnapshot pTargetSnapshotImageId`: If your code handles this message (meaning your code defines he handler and does not pass it) then it is your responsibility to export a snapshot to image id `pTargetSnapshotImageId`. Example: `export snapshot from the target to image id pTargetSnapshotImageId as PNG`. If your code doesn't handle this message then a snapshot of the row control will be exported for you.
+3. In `PostDragImageSnapshot` you restore the row control to it's normal state.
+
+These handlers will typically be defined in the row control behavior script or in the DataView instance script.
 
 ### Customizing the drop indicator
 
