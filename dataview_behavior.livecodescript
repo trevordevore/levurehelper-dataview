@@ -4275,7 +4275,7 @@ private command _getRangeOfRowsToDisplay @rStartRow, @rEndRow, @rStartRowYOffset
 
   put the viewProp["number of rows"] of me into theRowCount
 
-  if theRowCount is 0 then
+  if theRowCount < 1 then
     put 0 into rStartRow
     put 0 into rEndRow
     put 0 into rStartRowYOffset
