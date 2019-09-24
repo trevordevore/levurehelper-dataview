@@ -46,16 +46,26 @@ end __InspectInternally
 
 
 /**
-Summary: Initializes internal data structures and creatres mobile scrollbar.
+Summary: Possible entry point for initializing internal data structures.
+
+Description:
+Note that this message will not be called if a DataView is created
+by script.
 */
 before preopenControl
+  if the target is not me then exit preopenControl
   _init
-
-  if the environment is "mobile" then
-    set the visible of scrollbar "dvVScrollbar" of me to false
-    _createMobileScroller
-  end if
 end preopenControl
+
+
+/**
+Summary: Possible entry point for initializing internal data structures.
+
+*/
+before newGroup
+  if the target is not me then exit newGroup
+  _init
+end newGroup
 
 
 /**
@@ -492,6 +502,8 @@ command ResetView
   put the lockMessages into msgsAreLocked
   lock screen
   lock messages
+
+  _init
 
   # Cleanup rows, sending messages
   repeat for each key theKey in sViewPropsA["controls"]["cache"]
@@ -2391,10 +2403,24 @@ end dvRectOfRow
 /**
 Summary: Initializes the DataView.
 
-Returns: nothing
+Description:
+Initializes properties the first time the control is used. Note that the mobile scroller
+will be initialized everytime, regardless of whether or not `sInit` is `true`. That is because
+the mobile scroller needs to be cleaned up in `closeControl` but then recreated when the control
+is used again. There is no guaranteed entry point (messages could be locked)
+so `_init` is called from multiple places.
+
+If the control has already been initialized then return value is `true`.
+Otherwise it is `false`.
+
+Returns: Boolean
 */
 private command _init
-  if sInit then return empty
+  if sInit then
+    _initMobileScroller
+    return true
+  end if
+
   put true into sInit
 
   put _workingGroupRect(the long id of me) into sWorkingGroupRect
@@ -2439,8 +2465,6 @@ private command _init
 
   _setScrollbarWidth
 
-  ResetView
-
   # Initialize all templates
   # Note: this occurs every time an instance of a data view is opened.
   local theTemplatesA
@@ -2452,8 +2476,24 @@ private command _init
     end if
   end repeat
 
-  return empty
+  _initMobileScroller
+
+  return false
 end _init
+
+
+/**
+Summary: Creates a mobile scroller on mobile platforms.
+
+Returns: nothing
+*/
+private command _initMobileScroller
+  if the environment is "mobile" and \
+        (sScrollerID is empty or sScrollerID is not among the lines of mobileControls()) then
+    set the visible of scrollbar "dvVScrollbar" of me to false
+    _createMobileScroller
+  end if
+end _initMobileScroller
 
 
 /**
@@ -3117,7 +3157,11 @@ private command _renderView pRefreshDataInCachedControls
 
   put pRefreshDataInCachedControls is not false into pRefreshDataInCachedControls
 
+  # Make sure control is initialized and reset the view if it hasn't been.
   _init
+  if not the result then
+    ResetView
+  end if
 
   lock screen
 
