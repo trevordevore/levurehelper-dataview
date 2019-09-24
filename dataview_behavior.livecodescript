@@ -675,7 +675,7 @@ Returns: `true` if the `content height` changed while drawing.
 command RenderVisibleRows
   local theDataA, theStyle
   local theStartRow, theEndRow, theStartRowYOffset
-  local theRowCount, theRowWidth, theOrigContentHeight
+  local theRowWidth, theOrigContentHeight
   local msgsAreLocked
 
   ## Throttle
@@ -692,7 +692,6 @@ command RenderVisibleRows
   _getRangeOfRowsToDisplay theStartRow, theEndRow, theStartRowYOffset  ## can alter content height
 
   put the viewProp["content height"] of me into theOrigContentHeight
-  put the viewProp["number of rows"] of me into theRowCount
   put the viewProp["content width"] of me into theRowWidth
   --   put the viewProp["vscroll"] of me into theVScroll
 
