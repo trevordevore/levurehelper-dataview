@@ -111,13 +111,27 @@ pKeyNum: See LiveCode docs.
 Returns: empty
 */
 on rawKeyDown pKeyNum
-  ## exit immediately if an editable field is the target and action isn't scroll wheel.
-  set the wholeMatches to true
-  if word 1 of the target is "field" AND not the locktext of the target then
+  local tCanScroll
+
+  /*
+  Immediate exit:
+    1. No scrollbar (content isn't tall enough to scroll)
+    2. Editable field is target and either:
+        A. pKeyNum isn't interesting for scrolling purposes
+        B. The field is the focusedObject and it has a scrollbar
+  */
+  put the visible of scrollbar "dvVScrollbar" of me \
+        or the viewProp["scroll when vScrollbar is hidden"] of me into tCanScroll
+
+  if not tCanScroll then
+    pass rawKeyDown
+  else if word 1 of the target is "field" AND not the locktext of the target then
+    set the wholeMatches to true
+
     if pKeyNum is not among the items of kKeyNumsThatScroll then
       pass rawkeyDown
     else if the long id of the target is the focusedObject AND the vscrollbar of the target then
-      # If field has focus then scroll actions should be hanndled by field
+      # If field has focus then scroll actions should be handled by field
       pass rawKeyDown
     end if
   end if
@@ -138,29 +152,21 @@ on rawKeyDown pKeyNum
   switch pKeyNum
     case "65360"
       ## home
-      if the visible of scrollbar "dvVScrollbar" of me or the viewProp["scroll when vScrollbar is hidden"] of me then
-        set the viewProp["vscroll"] of me to 0
-      end if
+      set the viewProp["vscroll"] of me to 0
       break
     case "65367"
       ## end
-      if the visible of scrollbar "dvVScrollbar" of me or the viewProp["scroll when vScrollbar is hidden"] of me then
-        set the viewProp["vscroll"] of me to the endValue of scrollbar "dvVScrollbar" of me
-      end if
+      set the viewProp["vscroll"] of me to the endValue of scrollbar "dvVScrollbar" of me
       break
     case "65365"
       ## scroll page up
-      if the visible of scrollbar "dvVScrollbar" of me or the viewProp["scroll when vScrollbar is hidden"] of me then
-        set the viewProp["vscroll"] of me to the thumbPosition of scrollbar "dvVScrollbar" of me - \
-              the pageIncrement of scrollbar "dvVScrollbar" of me
-      end if
+      set the viewProp["vscroll"] of me to the thumbPosition of scrollbar "dvVScrollbar" of me - \
+            the pageIncrement of scrollbar "dvVScrollbar" of me
       break
     case "65366"
       ## scroll page down
-      if the visible of scrollbar "dvVScrollbar" of me or the viewProp["scroll when vScrollbar is hidden"] of me then
-        set the viewProp["vscroll"] of me to the thumbPosition of scrollbar "dvVScrollbar" of me + \
-              the pageIncrement of scrollbar "dvVScrollbar" of me
-      end if
+      set the viewProp["vscroll"] of me to the thumbPosition of scrollbar "dvVScrollbar" of me + \
+            the pageIncrement of scrollbar "dvVScrollbar" of me
       break
     case "65309"    # scroll up
       ## mouse wheel up
@@ -169,15 +175,13 @@ on rawKeyDown pKeyNum
       if the viewProp["cache"] of me is "none" and the viewProp["field editor is open"] of me then --sViewPropsA["field editor"]["control"] is not empty and there is a sViewPropsA["field editor"]["control"] then
         DeleteFieldEditor true, "close control"
       else
-        if the visible of scrollbar "dvVScrollbar" of me or the viewProp["scroll when vScrollbar is hidden"] of me then
-          if the platform is "macos" then
-            set the viewProp["vscroll"] of me to \
-                  round(the thumbPosition of scrollbar "dvVScrollbar" of me) - item 2 of macCurrentEventScrollValues()
-          else
-            put the viewProp["content window height"] of me into theAvailHeight
-            put round(theAvailHeight * .1) into theScroll
-            set the viewProp["vscroll"] of me to round(the thumbPosition of scrollbar "dvVScrollbar" of me) - theScroll
-          end if
+        if the platform is "macos" then
+          set the viewProp["vscroll"] of me to \
+                round(the thumbPosition of scrollbar "dvVScrollbar" of me) - item 2 of macCurrentEventScrollValues()
+        else
+          put the viewProp["content window height"] of me into theAvailHeight
+          put round(theAvailHeight * .1) into theScroll
+          set the viewProp["vscroll"] of me to round(the thumbPosition of scrollbar "dvVScrollbar" of me) - theScroll
         end if
       end if
       break
@@ -188,15 +192,13 @@ on rawKeyDown pKeyNum
       if the viewProp["cache"] of me is "none" and the viewProp["field editor is open"] of me then --sViewPropsA["field editor"]["control"] is not empty and there is a sViewPropsA["field editor"]["control"] then
         DeleteFieldEditor true, "close control"
       else
-        if the visible of scrollbar "dvVScrollbar" of me or the viewProp["scroll when vScrollbar is hidden"] of me then
-          if the platform is "macos" then
-            set the viewProp["vscroll"] of me to \
-                  round(the thumbPosition of scrollbar "dvVScrollbar" of me) - item 2 of macCurrentEventScrollValues()
-          else
-            put the viewProp["content window height"] of me into theAvailHeight
-            put round(theAvailHeight * .1) into theScroll
-            set the viewProp["vscroll"] of me to round(the thumbPosition of scrollbar "dvVScrollbar" of me) + theScroll
-          end if
+        if the platform is "macos" then
+          set the viewProp["vscroll"] of me to \
+                round(the thumbPosition of scrollbar "dvVScrollbar" of me) - item 2 of macCurrentEventScrollValues()
+        else
+          put the viewProp["content window height"] of me into theAvailHeight
+          put round(theAvailHeight * .1) into theScroll
+          set the viewProp["vscroll"] of me to round(the thumbPosition of scrollbar "dvVScrollbar" of me) + theScroll
         end if
       end if
       break
