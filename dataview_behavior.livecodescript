@@ -2418,14 +2418,16 @@ Otherwise it is `false`.
 Returns: Boolean
 */
 private command _init
+  # Rect can change without the resizeControl being notified (e.g. setting the topleft)
+  # Update the model so that the rect is always up to date when rendering.
+  put _workingGroupRect(the long id of me) into sWorkingGroupRect
+
   if sInit then
     _initMobileScroller
     return true
   end if
 
   put true into sInit
-
-  put _workingGroupRect(the long id of me) into sWorkingGroupRect
 
   set the opaque of me to false
   set the showborder of me to false
