@@ -638,6 +638,7 @@ command RenderRows pRows
         ## Since we are rendering from scratch dvControlHasBeenRendered should return false during the next two messages
         lock messages
         set the dvDataCache of control id theControlId to empty
+        set the dvHiliteState of control id theControlId to empty
         unlock messages
 
         ## Implemented by instance of behavior
