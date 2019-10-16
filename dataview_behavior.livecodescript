@@ -2304,6 +2304,32 @@ end dvRowIsDirty
 
 
 /**
+Summary: Marks all controls in the cache as dirty.
+
+Description:
+If a control is in the cache but not associated with a row then it is not
+possible to mark it as dirty. This handler will mark all controls in the cache
+as dirty.
+
+Returns: nothing
+*/
+command MarkAllControlsAsDirty
+  local tCacheKey, tControlId
+
+  lock messages
+  repeat for each key tCacheKey in sViewPropsA["controls"]["cache"]
+    put sViewPropsA["controls"]["cache"][tCacheKey]["control"] into tControlId
+    if tControlId is not empty then
+      set the dvIsDirty of control id tControlId to true
+    end if
+  end repeat
+  unlock messages
+
+  return empty
+end MarkAllControlsAsDirty
+
+
+/**
 Summary: Returns whether or not a row has been rendered. It it hasn't been rendered then it is a ghost control.
 
 Description:
