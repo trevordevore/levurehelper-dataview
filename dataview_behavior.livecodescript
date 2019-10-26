@@ -3452,8 +3452,7 @@ private command _moveControlIntoUnusedCachePool pCacheKey, pRow
 
   put sViewPropsA["controls"]["cache"][pCacheKey]["control"] into tControlId
   if there is a control id tControlId then
-    dispatch "HideRowControl" to control id tControlId
-    set the visible of control id tControlId to false
+    _hideRowControl tControlId
 
     # Send message to control telling it to clean up after itself
     dispatch "CleanupAfterRowControl" to control id tControlId
@@ -3474,6 +3473,12 @@ private command _moveControlIntoUnusedCachePool pCacheKey, pRow
 
   return empty
 end _moveControlIntoUnusedCachePool
+
+
+private command _hideRowControl pControlId
+  dispatch "HideRowControl" to control id pControlId
+  set the visible of control id pControlId to false
+end _hideRowControl
 
 
 /**
@@ -3998,8 +4003,7 @@ private command _cacheControls pRefreshDataInCachedControls
     # Get out early if not updating data
     if not pRefreshDataInCachedControls AND tControlId is not empty then
       # control may have a text editor open
-      dispatch "HideRowControl" to control id tControlId
-      set the visible of control id tControlId to false
+      _hideRowControl tControlId
       next repeat
     end if
 
@@ -4009,8 +4013,7 @@ private command _cacheControls pRefreshDataInCachedControls
     put the result into tControlId
 
     if tControlId is not empty then
-      dispatch "HideRowControl" to control id tControlId
-      set the visible of control id tControlId to false
+      _hideRowControl tControlId
     end if
   end repeat
 
@@ -4695,8 +4698,7 @@ private command _updateControlCacheForActiveRange pStartRow, pEndRow
             #             Field that is open but off screen doesn't seem to get exit/closefield messages though.
             --                  if not FieldEditorIsOpen(the long id of control id tControlId) then
             # Send message if control will maintain current data
-            dispatch "HideRowControl" to control id tControlId
-            hide control id tControlId
+            _hideRowControl tControlId
             --               end if
           end if
         catch e
