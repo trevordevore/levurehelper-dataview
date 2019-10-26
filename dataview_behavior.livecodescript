@@ -282,12 +282,12 @@ messages to overcome this shortcoming.
 moves around inside of the DataView. `mouseLeave` sends the `MouseLeaveControl` when the mouse
 leaves the DataView.
 */
-local sCurrentMouseRowControl
+local sCurrentMouseRowControlId
 local sMouseWithinDataView
 
 
 before mouseEnter
-  local tControl
+  local tControlId
 
   /*
   Observed behavior:
@@ -312,25 +312,27 @@ before mouseEnter
     dispatch "MouseEnterDataView" to me
   end if
 
-  put the dvRowControl of the target into tControl
-  if tControl is empty then
-    put the dvPaddingControl of the target into tControl
+  put the dvRowControl of the target into tControlId
+  if tControlId is empty then
+    put the dvPaddingControl of the target into tControlId
   end if
 
-  if tControl is not empty then
-    if tControl is not sCurrentMouseRowControl then
-      if sCurrentMouseRowControl is not empty and there is a sCurrentMouseRowControl then
-        dispatch "MouseLeaveControl" to sCurrentMouseRowControl
+  if tControlId is not empty then
+    put the short id of tControlId into tControlId
+
+    if tControlId is not sCurrentMouseRowControlId then
+      if sCurrentMouseRowControlId is not empty and there is a control id sCurrentMouseRowControlId then
+        dispatch "MouseLeaveControl" to control id sCurrentMouseRowControlId
       end if
 
-      put tControl into sCurrentMouseRowControl
-      dispatch "MouseEnterControl" to tControl
+      put tControlId into sCurrentMouseRowControlId
+      dispatch "MouseEnterControl" to control id sCurrentMouseRowControlId
     end if
   else
-    if there is a sCurrentMouseRowControl then
-      put sCurrentMouseRowControl into tControl
-      put empty into sCurrentMouseRowControl
-      dispatch "MouseLeaveControl" to tControl
+    if there is a control id sCurrentMouseRowControlId then
+      put sCurrentMouseRowControlId into tControlId
+      put empty into sCurrentMouseRowControlId
+      dispatch "MouseLeaveControl" to control id tControlId
     end if
   end if
 end mouseEnter
@@ -363,13 +365,13 @@ after mouseLeave
   # is why there is a check for a matching dvControl as well.
   if the mouseLoc is not within the rect of me or \
         the mousecontrol is empty or the dvControl of the mousecontrol is not the dvControl of me then
-    if sCurrentMouseRowControl is not empty then
-      local tControl
+    if sCurrentMouseRowControlId is not empty then
+      local tControlId
 
-      put sCurrentMouseRowControl into tControl
-      put empty into sCurrentMouseRowControl
-      if there is a tControl then
-        dispatch "MouseLeaveControl" to tControl
+      put sCurrentMouseRowControlId into tControlId
+      put empty into sCurrentMouseRowControlId
+      if there is a control id tControlId then
+        dispatch "MouseLeaveControl" to control id tControlId
       end if
     end if
 
