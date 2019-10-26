@@ -2374,6 +2374,46 @@ end dvRowControls
 
 
 /**
+Summary: Padding control property. Dont allow controls outside of this DataView to return return a value for this property.
+
+Returns: empty
+*/
+getProp dvPaddingControl
+  return empty
+end dvPaddingControl
+
+
+/**
+Summary: Row control property. Dont allow controls outside of this DataView to return return a value for this property.
+
+Returns: empty
+*/
+getProp dvRowControl
+  return empty
+end dvRowControl
+
+
+/**
+Summary: Row control property. Dont allow controls outside of this DataView to return return a value for this property.
+
+Returns: empty
+*/
+getProp dvHilite
+  return empty
+end dvHilite
+
+
+/**
+Summary: Row control property. Dont allow controls outside of this DataView to return return a value for this property.
+
+Returns: empty
+*/
+setProp dvHilite pValue
+  # nothing
+end dvHilite
+
+
+/**
 Summary: Tells you whether or not the last mouse click was within the content area of the control.
 
 Returns: Boolean
