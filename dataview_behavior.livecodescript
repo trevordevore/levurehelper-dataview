@@ -4693,13 +4693,7 @@ private command _updateControlCacheForActiveRange pStartRow, pEndRow
 
         try
           if the visible of control id tControlId then
-            # control may have a text editor open
-            # 2016-08-03: Tried to use this method to keep controls visible that have field open.
-            #             Field that is open but off screen doesn't seem to get exit/closefield messages though.
-            --                  if not FieldEditorIsOpen(the long id of control id tControlId) then
-            # Send message if control will maintain current data
             _hideRowControl tControlId
-            --               end if
           end if
         catch e
           put param(0) & cr & e
