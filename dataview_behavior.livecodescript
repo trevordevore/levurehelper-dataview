@@ -754,7 +754,7 @@ command RenderVisibleRows
 
       if not the visible of control id tControlId then
         # Send message to control telling it that it is being displayed
-        dispatch "ShowRowControl" to control id tControlId
+        dispatch "ShowControl" to control id tControlId
         set the visible of control id tControlId to true
       end if
 
@@ -3476,7 +3476,7 @@ end _moveControlIntoUnusedCachePool
 
 
 private command _hideRowControl pControlId
-  dispatch "HideRowControl" to control id pControlId
+  dispatch "HideControl" to control id pControlId
   set the visible of control id pControlId to false
 end _hideRowControl
 
