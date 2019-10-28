@@ -510,12 +510,14 @@ command ResetView
   _init
 
   # Cleanup rows, sending messages
+  unlock messages
   repeat for each key theKey in sViewPropsA["controls"]["cache"]
     if there is not a control id sViewPropsA["controls"]["cache"][theKey]["control"] then next repeat
 
-    dispatch "CleanupAfterRowControl" to control id sViewPropsA["controls"]["cache"][theKey]["control"]
+    # this will trigger `deleteGroup` where cleanup can occur
     delete control id sViewPropsA["controls"]["cache"][theKey]["control"]
   end repeat
+  lock messages
 
   # This will clean up any stragglers
   repeat with i = the number of groups of group "dvList" of me down to 1
@@ -526,7 +528,10 @@ command ResetView
   end repeat
 
   if there is a group "dvTopPaddingContent" of me then
+    unlock messages
+    # Sends `deleteGroup` message
     delete group "dvTopPaddingContent" of me
+    lock messages
   end if
 
   set the viewProp["vscroll"] of me to 0
@@ -3379,19 +3384,18 @@ private command _cleanupControl pCacheKey, pRow, pControlId, pDeleteInTime
   else
     # Send message to control telling it to clean up after itself
     if there is a control id pControlId then
-      dispatch "CleanupAfterRowControl" to control id pControlId
-
       lock messages
       if the long id of control id pControlId is in the focusedObject then
         focus on graphic "dvBackground" of me ## engine doesn't like the focused control in a group being deleted
       end if
+      unlock messages
 
       if not pDeleteInTime then
+        # Sends `deleteGroup` message
         delete control id pControlId
       else
         send "__deleteRowControl pControlId" to me in 0 seconds
       end if
-      unlock messages
     end if
 
     delete local sViewPropsA["controls"]["row cache keys"][pRow] # break link between row and cache key
@@ -3403,12 +3407,8 @@ end _cleanupControl
 
 
 command __deleteRowControl pControlId
-  local msgsAreLocked
-
-  put the lockmessages into msgsAreLocked
-  lock messages
+  # Sends `deleteGroup` message
   if there is a control id pControlId then delete control id  pControlId
-  set the lockmessages to msgsAreLocked
 end __deleteRowControl
 
 
@@ -3454,8 +3454,8 @@ private command _moveControlIntoUnusedCachePool pCacheKey, pRow
   if there is a control id tControlId then
     _hideRowControl tControlId
 
-    # Send message to control telling it to clean up after itself
-    dispatch "CleanupAfterRowControl" to control id tControlId
+    # For developer purposes this control is being deleted
+    dispatch "deleteGroup" to control id tControlId
 
     ## Move back into pool of available controls
     if the viewProp["cache"] of me is "none" then

@@ -124,9 +124,9 @@ Each stack should have the following properties:
 `InitializeTemplate`
 `FillInData pDataA, pRow`
 `LayoutControl pControlRect, pRow`
-`HideRowControl` # if cache is `none`
-`CleanupAfterRowControl`
-`ShowRowControl`
+`HideControl`
+`ShowControl`
+`deleteGroup`
 `EditKey pKey`
 `PreOpenFieldEditor pEditor`
 
