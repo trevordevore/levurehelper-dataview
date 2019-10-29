@@ -513,7 +513,7 @@ command ResetView
   repeat for each key theKey in sViewPropsA["controls"]["cache"]
     if there is not a control id sViewPropsA["controls"]["cache"][theKey]["control"] then next repeat
 
-    dispatch "CleanupAfterRowControl" to control id sViewPropsA["controls"]["cache"][theKey]["control"]
+    dispatch "CleanupAfterControl" to control id sViewPropsA["controls"]["cache"][theKey]["control"]
     delete control id sViewPropsA["controls"]["cache"][theKey]["control"]
   end repeat
 
@@ -3379,7 +3379,7 @@ private command _cleanupControl pCacheKey, pRow, pControlId, pDeleteInTime
   else
     # Send message to control telling it to clean up after itself
     if there is a control id pControlId then
-      dispatch "CleanupAfterRowControl" to control id pControlId
+      dispatch "CleanupAfterControl" to control id pControlId
 
       lock messages
       if the long id of control id pControlId is in the focusedObject then
@@ -3455,7 +3455,7 @@ private command _moveControlIntoUnusedCachePool pCacheKey, pRow
     _hideRowControl tControlId
 
     # Send message to control telling it to clean up after itself
-    dispatch "CleanupAfterRowControl" to control id tControlId
+    dispatch "CleanupAfterControl" to control id tControlId
 
     ## Move back into pool of available controls
     if the viewProp["cache"] of me is "none" then
