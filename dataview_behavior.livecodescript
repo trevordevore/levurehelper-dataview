@@ -3389,6 +3389,7 @@ private command _cleanupControl pCacheKey, pRow, pControlId, pDeleteInTime
       if not pDeleteInTime then
         delete control id pControlId
       else
+        set the visible of control id pControlId to false
         send "__deleteRowControl pControlId" to me in 0 seconds
       end if
       unlock messages
