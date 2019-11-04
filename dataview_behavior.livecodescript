@@ -5500,9 +5500,21 @@ command CreateFieldEditorForField pField, pKey
   end if
   unlock messages
 
+  local theFrontScriptButton
+
+  ## Inserted once, never removed
+  put the long id of stack "DataView Field Editor Frontscript" into theFrontScriptButton
+
+  if theFrontScriptButton is not among the lines of the frontScripts then
+    insert script of theFrontScriptButton into front
+  end if
+
   ## 2016-03-18: If the developer selected something in the editor already then don't do anything.
   ## Deprecated behavior: User can set dvSelectAll in preOpenFieldEditor
-  if the selectedField is not empty and the long id of the selectedfield is sViewPropsA["field editor"]["control"] then
+  local tDeveloperFocusedOnField
+
+  put the selectedField is not empty and the long id of the selectedfield is sViewPropsA["field editor"]["control"] into tDeveloperFocusedOnField
+  if tDeveloperFocusedOnField then
   else
     if the dvSelectAll of sViewPropsA["field editor"]["control"] then
       select char 1 to -1 of sViewPropsA["field editor"]["control"]
@@ -5532,13 +5544,8 @@ command CreateFieldEditorForField pField, pKey
     _hiliteControl the short id of the dvRowControl of sViewPropsA["field editor"]["control"], true
   end if
 
-  local theFrontScriptButton
-
-  ## Inserted once, never removed
-  put the long id of stack "DataView Field Editor Frontscript" into theFrontScriptButton
-
-  if theFrontScriptButton is not among the lines of the frontScripts then
-    insert script of theFrontScriptButton into front
+  if not tDeveloperFocusedOnField then
+    dispatch "selectionChanged" to sViewPropsA["field editor"]["control"]
   end if
 
   reset the templatefield
