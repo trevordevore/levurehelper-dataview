@@ -1346,7 +1346,7 @@ getProp viewProp [pProp]
       put sViewPropsA["field editor"]["control"] into theEditor
       if there is a theEditor then
         set the caseSensitive to true
-        return the styledText of theEditor is not the dvOriginalStyledText of theEditor
+        return the effective styledText of theEditor is not the dvOriginalStyledText of theEditor
       end if
       break
 
@@ -5491,7 +5491,7 @@ command CreateFieldEditorForField pField, pKey
   _populateFieldEditor pField
 
   lock messages
-  set the dvOriginalStyledText of sViewPropsA["field editor"]["control"] to the styledText of sViewPropsA["field editor"]["control"]
+  set the dvOriginalStyledText of sViewPropsA["field editor"]["control"] to the effective styledText of sViewPropsA["field editor"]["control"]
 
   ## Bug when editing right|center-aligned text that is wider than field.
   if the textAlign of sViewPropsA["field editor"]["control"] is not "left" \
@@ -5727,7 +5727,7 @@ command DeleteFieldEditor pSaveContents, pClosingTriggeredBy
       put the dvTargetKey of theEditor into theKey ## might be an array index
 
       set the caseSensitive to true
-      put the styledText of theEditor is not the dvOriginalStyledText of theEditor into contentHasChanged
+      put the effective styledText of theEditor is not the dvOriginalStyledText of theEditor into contentHasChanged
       set the caseSensitive to false
 
       if contentHasChanged then
