@@ -1443,7 +1443,7 @@ setProp viewProp [pProp] pValue
       end if
       break
     case "content left padding"
-    case "content left padding"
+    case "content right padding"
     case "content top padding"
     case "content bottom padding"
       if pValue is not a number then
