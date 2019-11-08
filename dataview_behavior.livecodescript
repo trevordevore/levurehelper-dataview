@@ -1389,8 +1389,14 @@ Table of properties that can be set:
 | `background color` |  |
 | `vscroll` |  |
 | `vscroll percent` |  |
+| `scrollbar width` |  |
+| `content left padding` |  |
+| `content right padding` |  |
+| `content top padding` |  |
+| `content bottom padding` |  |
 | `drop indicator template` |  |
 | `row style templates` |  |
+| `top padding template` |  |
 | `hilite color` |  |
 
 Returns: nothing
