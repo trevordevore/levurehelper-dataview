@@ -1428,6 +1428,20 @@ setProp viewProp [pProp] pValue
     case "hscroll"
 
       break
+    case "scrollbar width"
+      if pValue is not the viewProp[pProp] of me then
+        set the viewProp[pProp] of me to pValue
+        lock screen
+        _setScrollbarWidth pValue
+        _resizeSupportingControls
+        # Only resize controls if scrollbar overlaps content area.
+        if pValue > the viewProp["content right padding"] of me then
+          beep
+          _resizeRowControlsAsNeeded
+        end if
+        unlock screen
+      end if
+      break
     case "content left padding"
     case "content left padding"
     case "content top padding"
