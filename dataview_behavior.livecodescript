@@ -172,7 +172,7 @@ on rawKeyDown pKeyNum
       ## mouse wheel up
 
       ## If a field editor is open then it must be closed first
-      if the viewProp["cache"] of me is "none" and the viewProp["field editor is open"] of me then --sViewPropsA["field editor"]["control"] is not empty and there is a sViewPropsA["field editor"]["control"] then
+      if the viewProp["cache"] of me is "none" and the viewProp["field editor is open"] of me then
         DeleteFieldEditor true, "close control"
       else
         if the platform is "macos" then
@@ -189,7 +189,7 @@ on rawKeyDown pKeyNum
       ## mouse wheel down
 
       ## If a field editor is open then it must be closed first
-      if the viewProp["cache"] of me is "none" and the viewProp["field editor is open"] of me then --sViewPropsA["field editor"]["control"] is not empty and there is a sViewPropsA["field editor"]["control"] then
+      if the viewProp["cache"] of me is "none" and the viewProp["field editor is open"] of me then
         DeleteFieldEditor true, "close control"
       else
         if the platform is "macos" then
@@ -415,7 +415,7 @@ on touchStart pID
   if theRow is not empty then
     ## Clicked on a control. Bring focus into control but away from scrollbar.
     if the long ID of me is not in the long ID of the focusedObject or word 1 of the target is "scrollbar" or \
-          (sViewPropsA["field editor"]["control"] is not empty and sViewPropsA["field editor"]["control"] is the long ID of the focusedObject) then
+          (sViewPropsA["fld_editor"]["control"] is not empty and the long id of control id sViewPropsA["fld_editor"]["control"] is the long ID of the focusedObject) then
       focus on graphic "dvBackground" of me
     end if
   else
@@ -710,7 +710,6 @@ command RenderVisibleRows
 
   put the viewProp["content height"] of me into theOrigContentHeight
   put the viewProp["content width"] of me into theRowWidth
-  --   put the viewProp["vscroll"] of me into theVScroll
 
   ## Update the pool of available controls
   ## and reset list of rows in use
@@ -1325,12 +1324,14 @@ getProp viewProp [pProp]
       break
 
     case "field editor is open"
-      return there is a sViewPropsA["field editor"]["control"] and not sViewPropsA["field editor"]["closing"]
+      return sViewPropsA["fld_editor"]["control"] is not empty \
+            and there is a control id sViewPropsA["fld_editor"]["control"] \
+            and not sViewPropsA["fld_editor"]["closing"]
       break
 
     case "field editor"
-      if there is a sViewPropsA["field editor"]["control"] then
-        return sViewPropsA["field editor"]["control"]
+      if sViewPropsA["fld_editor"]["control"] is not empty and there is a control id sViewPropsA["fld_editor"]["control"] then
+        return the long id of control id sViewPropsA["fld_editor"]["control"]
       else
         return empty
       end if
@@ -1341,12 +1342,10 @@ getProp viewProp [pProp]
       break
 
     case "field editor content has changed"
-      local theEditor
-
-      put sViewPropsA["field editor"]["control"] into theEditor
-      if there is a theEditor then
+      if sViewPropsA["fld_editor"]["control"] is not empty and there is a control id sViewPropsA["fld_editor"]["control"] then
         set the caseSensitive to true
-        return the effective styledText of theEditor is not the dvOriginalStyledText of theEditor
+        return the effective styledText of control id sViewPropsA["fld_editor"]["control"] \
+              is not the dvOriginalStyledText of control id sViewPropsA["fld_editor"]["control"]
       end if
       break
 
@@ -1677,7 +1676,7 @@ command dvMouseDownBefore pMouseBtnNum
     ## This accounts for clicks on the scrollbar (which shouldn't have focus) and when focus is in the
     # dvTopPaddingContent group but should be removed.
     if the long ID of group "dvList" is not in the long ID of the focusedObject \
-          or (sViewPropsA["field editor"]["control"] is not empty and sViewPropsA["field editor"]["control"] is the long ID of the focusedObject) then
+          or (sViewPropsA["fld_editor"]["control"] is not empty and the long id of control id sViewPropsA["fld_editor"]["control"] is the long ID of the focusedObject) then
       focus on graphic "dvBackground" of me
     end if
   else
@@ -2811,6 +2810,25 @@ end _relativeRectOfRow
 
 
 /**
+Summary: Returns the topleft of a control relative to another control.
+
+Parameters:
+pObj: The target object.
+pRelativeToObj: Returned topleft point will be relative to this object.
+
+Returns: point
+*/
+private function _relativeTopLeft pObj, pRelativeToObj
+  local tAnchorTopLeft, tTopLeft
+
+  put the topleft of pRelativeToObj into tAnchorTopLeft
+  put the topleft of pObj into tTopLeft
+  return item 1 of tTopLeft - item 1 of tAnchorTopLeft & "," & \
+        item 2 of tTopLeft - item 2 of tAnchorTopLeft
+end _relativeTopLeft
+
+
+/**
 Summary: Scrolls a row into view.
 
 Parameters:
@@ -3238,7 +3256,7 @@ pRefreshDataInCachedControls If false and caching is on then cached controls wil
 Returns: empty
 */
 private command _renderView pRefreshDataInCachedControls
-  local msgsAreLocked, theFocusedObject, theSelChunk
+  local msgsAreLocked, theFocusedObject, tSelChunk
 
   ## Throttle
   if sViewPropsA["running actions"]["render"] then
@@ -3262,17 +3280,22 @@ private command _renderView pRefreshDataInCachedControls
   if the long id of me is in the focusedObject then
     put the focusedObject into theFocusedObject
     if word 1 of theFocusedObject is "field" then
-      put the selectedChunk into theSelChunk
+      put the selectedChunk into tSelChunk
+      # Create a reference that won't break as controls are relayered
+      put "control id" && the short id of theFocusedObject into word -2 to -1 of tSelChunk
     end if
     lock messages
     focus on nothing
   end if
   unlock messages
 
-  --   ## If not fixed row height then it requires caching.
-  --   if not the viewProp["fixed row height"] of me AND the viewProp["cache"] of me is not among the items of "eager,lazy" then
-  --      set the viewProp["cache"] of me to "lazy"
-  --   end if
+  # Make sure field editor doesn't disappear
+  if sViewPropsA["fld_editor"]["control"] is not empty then
+    put the dvRowCacheKey of control id sViewPropsA["fld_editor"]["control"] into sViewPropsA["fld_editor"]["relinkToCacheKey"]
+    put _relativeTopLeft(the long id of control id sViewPropsA["fld_editor"]["control"], \
+            the dvRowControl of control id sViewPropsA["fld_editor"]["control"]) into sViewPropsA["fld_editor"]["topleft"]
+    relayer control id sViewPropsA["fld_editor"]["control"] to back of group "dvListMask" of me
+  end if
 
   put the viewProp["number of rows"] of me into sNumRowsTempCache
 
@@ -3315,13 +3338,19 @@ private command _renderView pRefreshDataInCachedControls
 
   lock messages
 
+  # If edit field wasn't linked to new row control then silently delete.
+  if sViewPropsA["fld_editor"]["relinkToCacheKey"] is not empty and there is a field kFieldEditorName of group "dvListMask" of me then
+    delete field kFieldEditorName of group "dvListMask" of me
+    put empty into tSelChunk
+  end if
+
   _configureScrollbars ## It is possible that this call is redundant as RenderVisibleRows may call it. No big deal though.
 
   # If focus was in data view prior to start then refocus now if it still exists.
   if theFocusedObject is not empty then
     if there is a theFocusedObject then
-      if theSelChunk is not empty then
-        select theSelChunk
+      if tSelChunk is not empty then
+        select tSelChunk
       else
         focus on theFocusedObject
       end if
@@ -3630,10 +3659,10 @@ private command _setVScroll pValue
   set the thumbposition of scrollbar "dvVScrollbar" of me to pValue
   unlock messages
 
-  if refocusOnFieldEditor and there is a sViewPropsA["field editor"]["control"] then
+  if refocusOnFieldEditor and there is a control id sViewPropsA["fld_editor"]["control"] then
     ## Bring focus back to the field editor but don't send any messages
     lock messages
-    focus on sViewPropsA["field editor"]["control"]
+    focus on control id sViewPropsA["fld_editor"]["control"]
     try
       select theSelectedChunk ## Make sure selection remains
     catch e
@@ -3798,13 +3827,14 @@ Returns: Boolean. True if control was updated. False otherwise.
 */
 private command _prepareRowForDisplay pRow, pRowControlId, pRowWidth, pTopLeft
   local controlWasUpdated = "false"
-  local msgsAreLocked
+  local msgsAreLocked, tRowCacheKey
 
   ## Always update
   put the lockMessages into msgsAreLocked
   lock messages
   if pTopLeft is a point then set the topleft of control id pRowControlId to pTopLeft
   set the dvRow of control id pRowControlId to pRow
+  put _getCacheKeyForRow(pRow) into tRowCacheKey
 
   if the dvDataCache of control id pRowControlId is not NULL then
     local theDataA
@@ -3816,17 +3846,21 @@ private command _prepareRowForDisplay pRow, pRowControlId, pRowWidth, pTopLeft
 
     lock messages
     set the dvDataCache of control id pRowControlId to NULL
+    _restoreEditorFieldToControl tRowCacheKey, pRowControlId
     unlock messages
+
     _dispatchLayoutControl pRowControlId, pRow, pRowWidth, true
     put true into controlWasUpdated
   else
     if the dvIsDirty of control id pRowControlId then
       unlock messages
       _setupRowControl pRow, pRowControlId, true
+    else
+      _restoreEditorFieldToControl tRowCacheKey, pRowControlId
     end if
 
     ## Regular control
-    if sViewPropsA["controls"]["cache"][_getCacheKeyForRow(pRow)]["resize"] or the dvIsDirty of control id pRowControlId then
+    if sViewPropsA["controls"]["cache"][tRowCacheKey]["resize"] or the dvIsDirty of control id pRowControlId then
       unlock messages
       _dispatchLayoutControl pRowControlId, pRow, pRowWidth, true
       put true into controlWasUpdated
@@ -4107,11 +4141,34 @@ private command _setupRowControl pRow, pRowControlId, pForceFillInData
       set the dvDataCache of control id pRowControlId to theDataA
     end if
 
+    _restoreEditorFieldToControl _getCacheKeyForRow(pRow), pRowControlId
+
     set the lockMessages to msgsAreLocked
   end if
 
   return pRowControlId
 end _setupRowControl
+
+
+/**
+Summary: Restores the editor field to the proper row control. Used when refreshing view.
+
+Parameters:
+pRowCacheKey: The cache key of the the row template.
+pParentControlId: The id of the row template that will become the parent of the editor field.
+
+Returns: nothing
+*/
+private command _restoreEditorFieldToControl pRowCacheKey, pParentControlId
+  if pRowCacheKey is not empty and sViewPropsA["fld_editor"]["relinkToCacheKey"] is pRowCacheKey then
+    relayer control id sViewPropsA["fld_editor"]["control"] to front of control id pParentControlId
+    set the topleft of control id sViewPropsA["fld_editor"]["control"] to \
+          the left of control id pParentControlId + item 1 of sViewPropsA["fld_editor"]["topleft"], \
+          the top of control id pParentControlId + item 2 of sViewPropsA["fld_editor"]["topleft"]
+    delete variable sViewPropsA["fld_editor"]["topleft"]
+    delete variable sViewPropsA["fld_editor"]["relinkToCacheKey"]
+  end if
+end _restoreEditorFieldToControl
 
 
 /**
@@ -5492,18 +5549,19 @@ command CreateFieldEditorForField pField, pKey
   lock messages
 
   create field kFieldEditorName in tRowControl
-  put the long ID of it into sViewPropsA["field editor"]["control"]
+  put the short id of it into sViewPropsA["fld_editor"]["control"]
 
-  set the behavior of sViewPropsA["field editor"]["control"] to the long ID of stack "DataView Field Editor Behavior"
+  set the behavior of control id sViewPropsA["fld_editor"]["control"] to the long ID of stack "DataView Field Editor Behavior"
 
-  set the rect of sViewPropsA["field editor"]["control"] to the rect of pField
+  set the rect of control id sViewPropsA["fld_editor"]["control"] to the rect of pField
 
-  set the dvIsFieldEditor of sViewPropsA["field editor"]["control"] to true
-  set the uIsFieldEditor of sViewPropsA["field editor"]["control"] to true ## property name for generic field editor
-  set the dvTargetField of sViewPropsA["field editor"]["control"] to pField
-  set the uTargetField of sViewPropsA["field editor"]["control"] to pField ## property name for generic field editor
-  set the dvTargetKey of sViewPropsA["field editor"]["control"] to pKey
-  set the dvScrollInPadding of sViewPropsA["field editor"]["control"] to 0,10,0,10
+  set the dvIsFieldEditor of control id sViewPropsA["fld_editor"]["control"] to true
+  set the uIsFieldEditor of control id sViewPropsA["fld_editor"]["control"] to true ## property name for generic field editor
+  set the dvTargetField of control id sViewPropsA["fld_editor"]["control"] to pField
+  set the uTargetField of control id sViewPropsA["fld_editor"]["control"] to pField ## property name for generic field editor
+  set the dvTargetKey of control id sViewPropsA["fld_editor"]["control"] to pKey
+  set the dvScrollInPadding of control id sViewPropsA["fld_editor"]["control"] to 0,10,0,10
+  set the dvRowCacheKey of control id sViewPropsA["fld_editor"]["control"] to _getCacheKeyForRow(theRow)
 
   unlock messages
 
@@ -5511,12 +5569,12 @@ command CreateFieldEditorForField pField, pKey
   _populateFieldEditor pField
 
   lock messages
-  set the dvOriginalStyledText of sViewPropsA["field editor"]["control"] to the effective styledText of sViewPropsA["field editor"]["control"]
+  set the dvOriginalStyledText of control id sViewPropsA["fld_editor"]["control"] to the effective styledText of control id sViewPropsA["fld_editor"]["control"]
 
   ## Bug when editing right|center-aligned text that is wider than field.
-  if the textAlign of sViewPropsA["field editor"]["control"] is not "left" \
-        and the formattedWidth of sViewPropsA["field editor"]["control"] >= the width of sViewPropsA["field editor"]["control"] then
-    set the textAlign of sViewPropsA["field editor"]["control"] to "left"
+  if the textAlign of control id sViewPropsA["fld_editor"]["control"] is not "left" \
+        and the formattedWidth of control id sViewPropsA["fld_editor"]["control"] >= the width of control id sViewPropsA["fld_editor"]["control"] then
+    set the textAlign of control id sViewPropsA["fld_editor"]["control"] to "left"
   end if
   unlock messages
 
@@ -5533,39 +5591,40 @@ command CreateFieldEditorForField pField, pKey
   ## Deprecated behavior: User can set dvSelectAll in preOpenFieldEditor
   local tDeveloperFocusedOnField
 
-  put the selectedField is not empty and the long id of the selectedfield is sViewPropsA["field editor"]["control"] into tDeveloperFocusedOnField
+  put the selectedField is not empty and \
+        the long id of the selectedfield is the long id of control id sViewPropsA["fld_editor"]["control"] into tDeveloperFocusedOnField
   if tDeveloperFocusedOnField then
   else
-    if the dvSelectAll of sViewPropsA["field editor"]["control"] then
-      select char 1 to -1 of sViewPropsA["field editor"]["control"]
+    if the dvSelectAll of control id sViewPropsA["fld_editor"]["control"] then
+      select char 1 to -1 of control id sViewPropsA["fld_editor"]["control"]
     else
       if theClickField is not empty and theClickField is the long ID of pField then
         if theClickChunk is not empty then
-          select after char (word 2 of theClickChunk) of sViewPropsA["field editor"]["control"]
+          select after char (word 2 of theClickChunk) of control id sViewPropsA["fld_editor"]["control"]
         else if theClickLine is not empty then
-          select after line (word 2 of theClickLine) of sViewPropsA["field editor"]["control"]
+          select after line (word 2 of theClickLine) of control id sViewPropsA["fld_editor"]["control"]
         else
-          select after char -1 of sViewPropsA["field editor"]["control"]
+          select after char -1 of control id sViewPropsA["fld_editor"]["control"]
         end if
       else
-        select after char -1 of sViewPropsA["field editor"]["control"]
+        select after char -1 of control id sViewPropsA["fld_editor"]["control"]
       end if
     end if
   end if
 
   if thisStackHasFocus then
-    focus on sViewPropsA["field editor"]["control"]
+    focus on control id sViewPropsA["fld_editor"]["control"]
   end if
 
   ## All of the scrolling around and unfocusing of controls will leave
   ## the row the field editor is in dimmed out. Explicitly highlight the
   ## row again.
   if the dvCanSelect of tRowControl is not false then
-    _hiliteControl the short id of the dvRowControl of sViewPropsA["field editor"]["control"], true
+    _hiliteControl the short id of the dvRowControl of control id sViewPropsA["fld_editor"]["control"], true
   end if
 
   if not tDeveloperFocusedOnField then
-    dispatch "selectionChanged" to sViewPropsA["field editor"]["control"]
+    dispatch "selectionChanged" to control id sViewPropsA["fld_editor"]["control"]
   end if
 
   reset the templatefield
@@ -5582,8 +5641,8 @@ Summary: Refreshes the editor field content.
 Returns: empty
 */
 command RefreshFieldEditorContent
-  if there is a sViewPropsA["field editor"]["control"] then
-    _populateFieldEditor the dvTargetField of sViewPropsA["field editor"]["control"]
+  if sViewPropsA["fld_editor"]["control"] is not empty and there is a control id sViewPropsA["fld_editor"]["control"] then
+    _populateFieldEditor the dvTargetField of control id sViewPropsA["fld_editor"]["control"]
   end if
   return empty
 end RefreshFieldEditorContent
@@ -5599,25 +5658,25 @@ private command _populateFieldEditor pField
 
   ## Shout our existence out to the world
   try
-    dispatch "PreOpenFieldEditor" to pField with sViewPropsA["field editor"]["control"]
+    dispatch "PreOpenFieldEditor" to pField with the long id of control id sViewPropsA["fld_editor"]["control"]
     if it is not "handled" then
-      set the styledText of sViewPropsA["field editor"]["control"] to the styledText of pField
+      set the styledText of control id sViewPropsA["fld_editor"]["control"] to the styledText of pField
     end if
 
     ## Determine the rect that needs to be scrolled into view
     if the viewProp["scroll selections into view"] of me then
       put the dvRowControl of pField into theRowControl
       put the dvRectOfRow[the dvRow of theRowControl] of me into theRowRect
-      add (the top of sViewPropsA["field editor"]["control"] - the top of theRowControl) to item 2 of theRowRect
-      subtract (the bottom of theRowControl - the bottom of sViewPropsA["field editor"]["control"]) from item 4 of theRowRect
+      add (the top of control id sViewPropsA["fld_editor"]["control"] - the top of theRowControl) to item 2 of theRowRect
+      subtract (the bottom of theRowControl - the bottom of control id sViewPropsA["fld_editor"]["control"]) from item 4 of theRowRect
 
       ## Developer can set uPadding of field
-      ScrollRectIntoView theRowRect, the dvScrollInPadding of sViewPropsA["field editor"]["control"]
+      ScrollRectIntoView theRowRect, the dvScrollInPadding of control id sViewPropsA["fld_editor"]["control"]
     end if
   catch e
     lock messages
-    delete sViewPropsA["field editor"]["control"]
-    put empty into sViewPropsA["field editor"]
+    delete control id sViewPropsA["fld_editor"]["control"]
+    put empty into sViewPropsA["fld_editor"]
     unlock messages
 
     throw e
@@ -5643,7 +5702,9 @@ Returns: empty
 command _CloseFieldEditor pSaveContents, pClosingTriggeredBy
   ## Don't process if field editor is not open
   ## OR it is already being closed (most likely e.g. escapekey triggers closing and then closeField tries to close as well)
-  if there is a sViewPropsA["field editor"]["control"] and not sViewPropsA["field editor"]["closing"] then
+  if sViewPropsA["fld_editor"]["control"] is not empty and \
+        there is a control id sViewPropsA["fld_editor"]["control"] and \
+        not sViewPropsA["fld_editor"]["closing"] then
     if _shouldFieldEditorClose(pClosingTriggeredBy) then
       put pSaveContents is not false into pSaveContents
       DeleteFieldEditor pSaveContents, pClosingTriggeredBy
@@ -5718,7 +5779,7 @@ command DeleteFieldEditor pSaveContents, pClosingTriggeredBy
   put the lockMessages into msgsAreLocked
 
   ## Make sure control still exists.
-  if there is not a sViewPropsA["field editor"]["control"] then
+  if sViewPropsA["fld_editor"]["control"] is empty or there is not a control id sViewPropsA["fld_editor"]["control"] then
     ## The pointer is invalid. Now ensure that actual control is missing.
     if there is a field kFieldEditorName of group "dvListMask" of me then
       lock messages
@@ -5733,13 +5794,13 @@ command DeleteFieldEditor pSaveContents, pClosingTriggeredBy
 
   unlock messages
 
-  put sViewPropsA["field editor"]["control"] into theEditor
+  put the long id of control id sViewPropsA["fld_editor"]["control"] into theEditor
   put the dvTargetField of theEditor into theField
 
   lock screen
 
   ## So that "field editor is open" returns false
-  put true into sViewPropsA["field editor"]["closing"]
+  put true into sViewPropsA["fld_editor"]["closing"]
 
   if there is a theField then
     if pSaveContents then
@@ -5768,7 +5829,7 @@ command DeleteFieldEditor pSaveContents, pClosingTriggeredBy
   if theError is empty then
     if there is a theEditor then # Saw error message where this had disappeared. Possibly in CloseFieldEditor...
       put the long id of the focusedObject into theFocusedObject
-      if the long id of theEditor is theFocusedObject then focus on nothing ## so closeField/exitField are called
+      if theEditor is theFocusedObject then focus on nothing ## so closeField/exitField are called
       hide theEditor
 
       lock messages
@@ -5794,11 +5855,13 @@ command DeleteFieldEditor pSaveContents, pClosingTriggeredBy
       _hiliteRowsInVisibleControls
 
       ## Reset internals
-      put empty into sViewPropsA["field editor"]
+      delete variable sViewPropsA["fld_editor"]
     end if
   end if
 
-  put false into sViewPropsA["field editor"]["closing"]
+  if sViewPropsA["fld_editor"] is an array then
+    put false into sViewPropsA["fld_editor"]["closing"]
+  end if
 
   set the lockMessages to msgsAreLocked
   unlock screen
@@ -5848,7 +5911,7 @@ command DeleteFieldEditorAndOpenNext pClosingTriggeredBy, pDirection
   put the lockMessages into msgsAreLocked
 
   ## Make sure editor exists
-  if there is not a sViewPropsA["field editor"]["control"] then
+  if sViewPropsA["fld_editor"]["control"] is empty or there is not a control id sViewPropsA["fld_editor"]["control"] then
     ## The pointer is invalid. Now ensure that actual control is missing.
     if there is a field kFieldEditorName of group "dvListMask" of me then
       lock messages
@@ -5866,8 +5929,8 @@ command DeleteFieldEditorAndOpenNext pClosingTriggeredBy, pDirection
   put _isThisModifierSetActive("shift") into shiftKeyIsDown
 
   ## Get info before field might be deleted
-  put the dvRow of the dvRowControl of sViewPropsA["field editor"]["control"] into theRow
-  put the dvTargetKey of sViewPropsA["field editor"]["control"] into theKey
+  put the dvRow of the dvRowControl of control id sViewPropsA["fld_editor"]["control"] into theRow
+  put the dvTargetKey of control id sViewPropsA["fld_editor"]["control"] into theKey
 
   DeleteFieldEditor true, pClosingTriggeredBy
   put the result into theError
