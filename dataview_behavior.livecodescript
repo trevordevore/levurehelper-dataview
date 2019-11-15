@@ -3341,6 +3341,7 @@ private command _renderView pRefreshDataInCachedControls
   # If edit field wasn't linked to new row control then silently delete.
   if sViewPropsA["fld_editor"]["relinkToCacheKey"] is not empty and there is a field kFieldEditorName of group "dvListMask" of me then
     delete field kFieldEditorName of group "dvListMask" of me
+    delete variable sViewPropsA["fld_editor"]
     put empty into tSelChunk
   end if
 
