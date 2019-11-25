@@ -147,7 +147,7 @@ on rawKeyDown pKeyNum
 
   ## Note: Messages are locked when setting thumbpostion and we call scrolling code directly.
   ##          This is done so that scrolling works when scrollbars are hidden.
-  local theAvailHeight, theScroll
+  local tAvailHeight, tScroll, tRowHeight
 
   switch pKeyNum
     case "65360"
@@ -175,13 +175,20 @@ on rawKeyDown pKeyNum
       if the viewProp["cache"] of me is "none" and the viewProp["field editor is open"] of me then
         DeleteFieldEditor true, "close control"
       else
-        if the platform is "macos" then
+        if sUseEventsForScroll then
+          put the viewProp["row height"] of me into tRowHeight
+          if tRowHeight <= 0 then
+            # This calculation provides an acceptable scroll speed for variabl row height in testing
+            put the viewProp["content window height"] of me into tAvailHeight
+            put round(tAvailHeight * .03) into tRowHeight
+          end if
+
           set the viewProp["vscroll"] of me to \
-                round(the thumbPosition of scrollbar "dvVScrollbar" of me) - item 2 of macCurrentEventScrollValues()
+                round(the thumbPosition of scrollbar "dvVScrollbar" of me) - item 2 of macCurrentEventScrollValues(tRowHeight)
         else
-          put the viewProp["content window height"] of me into theAvailHeight
-          put round(theAvailHeight * .1) into theScroll
-          set the viewProp["vscroll"] of me to round(the thumbPosition of scrollbar "dvVScrollbar" of me) - theScroll
+          put the viewProp["content window height"] of me into tAvailHeight
+          put round(tAvailHeight * .1) into tScroll
+          set the viewProp["vscroll"] of me to round(the thumbPosition of scrollbar "dvVScrollbar" of me) - tScroll
         end if
       end if
       break
@@ -192,13 +199,20 @@ on rawKeyDown pKeyNum
       if the viewProp["cache"] of me is "none" and the viewProp["field editor is open"] of me then
         DeleteFieldEditor true, "close control"
       else
-        if the platform is "macos" then
+        if sUseEventsForScroll then
+          put the viewProp["row height"] of me into tRowHeight
+          if tRowHeight <= 0 then
+            # This calculation provides an acceptable scroll speed for variabl row height in testing
+            put the viewProp["content window height"] of me into tAvailHeight
+            put round(tAvailHeight * .03) into tRowHeight
+          end if
+
           set the viewProp["vscroll"] of me to \
-                round(the thumbPosition of scrollbar "dvVScrollbar" of me) - item 2 of macCurrentEventScrollValues()
+                round(the thumbPosition of scrollbar "dvVScrollbar" of me) - item 2 of macCurrentEventScrollValues(tRowHeight)
         else
-          put the viewProp["content window height"] of me into theAvailHeight
-          put round(theAvailHeight * .1) into theScroll
-          set the viewProp["vscroll"] of me to round(the thumbPosition of scrollbar "dvVScrollbar" of me) + theScroll
+          put the viewProp["content window height"] of me into tAvailHeight
+          put round(tAvailHeight * .1) into tScroll
+          set the viewProp["vscroll"] of me to round(the thumbPosition of scrollbar "dvVScrollbar" of me) + tScroll
         end if
       end if
       break
@@ -2555,8 +2569,6 @@ private command _init
       break
   end switch
 
-  _setScrollbarWidth
-
   # Initialize all templates
   # Note: this occurs every time an instance of a data view is opened.
   local theTemplatesA
@@ -2568,7 +2580,10 @@ private command _init
     end if
   end repeat
 
+  _setScrollbarWidth
   _initMobileScroller
+  put "community.livecode.trevordevore.macosscrollwheel" is among the lines of the loadedExtensions \
+        into sUseEventsForScroll
 
   return false
 end _init

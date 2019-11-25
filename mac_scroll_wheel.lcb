@@ -5,7 +5,7 @@ library community.livecode.trevordevore.macosscrollwheel
 
   metadata title is "macOS Scroll Wheel"
   metadata author is "Trevor DeVore"
-  metadata version is "1.0.0"
+  metadata version is "1.1.0"
 
   private type NSUInteger is CULong
   constant kNSEventTypeScrollWheel is 22
@@ -35,7 +35,15 @@ library community.livecode.trevordevore.macosscrollwheel
         returns NSUInteger \
         binds to "objc:NSEvent.type"
 
-  public handler macCurrentEventScrollValues() returns String
+  /**
+  Summary: Returns the x/y scroll delta values for the last event.
+
+  Parameters:
+  pRowHeight: Value to use to calculate value if `hasPreciseScrollingDeltas` is false (some mouse scroll wheels).
+
+  Returns: List of deltaX,deltaY
+  */
+  public handler macCurrentEventScrollValues(in pRowHeight as Number) returns String
     variable nsApp as ObjcObject
     variable nsEvent as ObjcObject
     variable tPoints as String
@@ -49,6 +57,12 @@ library community.livecode.trevordevore.macosscrollwheel
       if ObjC_NSEventType(nsEvent) is kNSEventTypeScrollWheel then
         put ObjC_NSEventScrollingDeltaX(nsEvent) into tDeltaX
         put ObjC_NSEventScrollingDeltaY(nsEvent) into tDeltaY
+
+        -- When hasPreciseScrollingDeltas is NO, multiply the value returned by this method by the line or row height. Otherwise scroll by the returned amount.
+        if not ObjC_NSEventHasPreciseScrollingDeltas(nsEvent) then
+          multiply tDeltaX by pRowHeight
+          multiply tDeltaY by pRowHeight
+        end if
       end if
     end unsafe
 
