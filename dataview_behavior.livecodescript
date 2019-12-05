@@ -2140,6 +2140,7 @@ on dvDragMove pMouseH, pMouseV, pDragMoveTarget
       if the result is not false then
         local tX, tY
 
+        put the dragAction into sDropStructure["info"]["action"]
         put tProposedRow into sDropStructure["drop row"]
         put tProposedDropOperation into sDropStructure["drop operation"]
         put true into showDropIndicator
@@ -2171,6 +2172,7 @@ on dvDragMove pMouseH, pMouseV, pDragMoveTarget
         set the topLeft of group "dvDropIndicator" of me to tX, tY
         unlock messages
         dispatch "PositionDropIndicator" to group 1 of group "dvDropIndicator" of me with pDragMoveTarget, sDropStructure["info"], sDropStructure["drop row"], sDropStructure["drop operation"]
+        put the dragAction into sDropStructure["info"]["action"]
       else
         set the dragAction to "none"
       end if
