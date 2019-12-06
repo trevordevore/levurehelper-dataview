@@ -27,6 +27,7 @@ local sNumRowsTempCache ## Caches row count during single event
 local sTouchA # for swiping
 local sMouseDownA # dvMouseDownBefore handler stores data in this variable that dvMouseDownAfter handler uses.
 local sDropStructure
+local sUseEventsForScroll
 
 
 /**
