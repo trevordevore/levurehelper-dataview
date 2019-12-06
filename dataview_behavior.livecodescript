@@ -2534,7 +2534,6 @@ private command _init
   put true into sInit
 
   set the opaque of me to false
-  set the showborder of me to false
   set the showname of me to false
   set the hscrollbar of me to false
   set the vscrollbar of me to false
