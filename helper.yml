@@ -21,4 +21,5 @@ libraries:
     distribute: false
 extensions:
   - filename: mac_scroll_wheel.lcm
+    platform: macos
     source: mac_scroll_wheel.lcb
