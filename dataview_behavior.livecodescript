@@ -3646,6 +3646,7 @@ private command _setVScroll pValue
   if refocusOnMe and the viewProp["field editor is open"] of me then
     put true into refocusOnFieldEditor
     put the selectedChunk into theSelectedChunk
+    put "id" && the short id of the selectedField into the last word of theSelectedChunk
   end if
 
   lock screen
