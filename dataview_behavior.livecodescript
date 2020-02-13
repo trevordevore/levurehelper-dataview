@@ -3624,7 +3624,7 @@ end _setVScrollForPlatform
 
 
 private command _setVScroll pValue
-  local msgsAreLocked, refocusOnMe, theSelectedChunk, theOrigThumb
+  local msgsAreLocked, refocusOnMe, theOrigThumb
   local refocusOnFieldEditor = "false"
 
   ## Should we enable this for Lion as well?
@@ -3645,10 +3645,6 @@ private command _setVScroll pValue
   unlock messages
   if refocusOnMe and the viewProp["field editor is open"] of me then
     put true into refocusOnFieldEditor
-    put the selectedChunk into theSelectedChunk
-    if theSelectedChunk is not empty then
-      put "id" && the short id of the selectedField into the last word of theSelectedChunk
-    end if
   end if
 
   lock screen
@@ -3684,10 +3680,6 @@ private command _setVScroll pValue
     ## Bring focus back to the field editor but don't send any messages
     lock messages
     focus on control id sViewPropsA["fld_editor"]["control"]
-    try
-      select theSelectedChunk ## Make sure selection remains
-    catch e
-    end try
   else if refocusOnMe then
     set the dvFocus of me to true ## We like to keep focus
   end if
