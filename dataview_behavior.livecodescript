@@ -4830,7 +4830,7 @@ private function _getControlIdOfStyle pStyle
     put the viewProp["row style templates"] of me into theTemplatesA
     put theTemplatesA[pStyle] into theTemplate
     if there is not a theTemplate then
-      put param(0) && "alert: no template" & cr & "theTemplate:" && theTemplate & cr & "pStyle:" && pStyle & cr & the executioncontexts
+      throw "DataView Error:" && quote & pStyle & quote && "does not have a valid template defined. Template:" && quote & theTemplate & quote
     else
       local msgsAreLocked
       put the lockMessages into msgsAreLocked
