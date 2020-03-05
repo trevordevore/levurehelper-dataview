@@ -4244,7 +4244,7 @@ private command _resizeSupportingControls
   subtract max(0, the viewProp["content right padding"] of me) from item 3 of tRect
 
   # Account for scrollbar if content height exceeds working group height
-  if the viewProp["content height"] of me > (item 4 of tRect - item 2 of tRect) then
+  if the environment is not "mobile" and the viewProp["content height"] of me > (item 4 of tRect - item 2 of tRect) then
     put min(the left of scrollbar "dvVScrollbar" of me, item 3 of tRect) into item 3 of tRect
   end if
 
