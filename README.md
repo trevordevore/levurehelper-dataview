@@ -14,6 +14,30 @@ The DataView Demo application includes an example of using this helper:
 
 https://github.com/trevordevore/dataview_demo
 
+## Installation
+
+### Levure application
+
+If your LiveCode application uses the Levure framework then the DataView can be added as a helper.
+
+1. Download the latest release of **Source Code.zip|tar.gz** from https://github.com/trevordevore/levurehelper-dataview/releases
+2. Unzip the contents and add the resulting folder to the **./app/helpers** folder in your application folder.
+
+### non-Levure applications
+
+If your LiveCode application is not using the Levure framework then you can use the **dataview_loader.livecodescript** file to load the necessary stacks into memory.
+
+1. Download the latest release of **Source Code.zip|tar.gz** from https://github.com/trevordevore/levurehelper-dataview/releases
+2. Unzip the contents and add the resulting folder to your application folder.
+3. In your application code start using the **dataview_loader.livecodescript** stack file.
+
+```
+put _parentFolder() & "/dataview_loader.livecodescript" into tStackfile
+start using stack tStackfile
+```
+
+This will load the necessary files and then delete the loader stack from memory.
+
 ## Creating a DataView
 
 The DataView helper includes two commands which can create DataView group controls in the LiveCode IDE:
