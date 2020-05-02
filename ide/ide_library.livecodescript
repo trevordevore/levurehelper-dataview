@@ -139,7 +139,14 @@ command dvIdeCreateRowTemplates pDataViewControl, pStyles, pRowStyleTemplateGrou
   put the short name of pDataViewControl into tDataViewName
   put tDataViewName && "Row Templates" into tStackName
   put _makeUniqueStackName(tStackName) into tStackName
-  put levureAppFolder() & "/templates" into tTemplateFolder
+  try
+    put levureAppFolder() & "/templates" into tTemplateFolder
+  catch e
+    # non-Levure application
+    answer folder "Select folder to add template to"
+    put it into tTemplateFolder
+    if tTemplateFolder is empty then return empty
+  end try
 
   if there is not a folder tTemplateFolder then
     put tTemplateFolder && "folder needs to be created and added to app.yml" into tError
