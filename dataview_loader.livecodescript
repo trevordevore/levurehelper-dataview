@@ -35,13 +35,11 @@ on libraryStack
   end if
 
   send "__removeDataViewLoaderFromMemory" to stack "DataView Behavior" in 0 seconds
-
-  stop using me
 end libraryStack
 
 
 command __removeDataViewLoaderFromMemory
-  delete me
+  delete stack "DataView Assets Loader"
 end __removeDataViewLoaderFromMemory
 
 
