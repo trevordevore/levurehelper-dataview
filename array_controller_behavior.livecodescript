@@ -23,6 +23,16 @@ setProp dvData pDataA
 end dvData
 
 
+/**
+Summary: Return the dvData array.
+
+Returns: Array
+*/
+getprop dvData
+  return sDataA
+end dvData
+
+
 command DataForRow pRow, @rDataA, @rTemplateStyle
   put sDataA[pRow] into rDataA
   if rDataA["@style"] is not empty then
