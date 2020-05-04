@@ -30,10 +30,11 @@ If your LiveCode application is not using the Levure framework then you can use 
 1. Download the latest release of **Source Code.zip|tar.gz** from https://github.com/trevordevore/levurehelper-dataview/releases
 2. Unzip the contents, rename the resulting folder to **dataview**, and add the folder to your application folder.
 3. Using the property inspector your application stack, Add all of the stack files in the **dataview** folder to the `mainstacks` property of your application stack.
-3. In your application code start using the **"DataView Assets Loader"** stack.
+3. In your application code start using the **"DataView Assets Loader"** stack and then remove it from memory.
 
 ```
 start using stack "DataView Assets Loader"
+delete stack "DataView Assets Loader"
 ```
 
 ## Creating a DataView
