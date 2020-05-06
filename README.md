@@ -370,3 +370,21 @@ command PositionDropIndicator pDraggingInfoA, pRow, pDropOperation
   set the rect of graphic 1 of me to tRect
 end PositionDropIndicator
 ```
+
+## A Note on Behaviors
+
+This is mainly for folks who aren't using the Levure framework as they are more likely to run into the situation described below. Levure makes sure that behaviors are loaded into memory before any stacks try to load them.
+
+Behaviors are wonderful things. Except when they don't resolve properly. Then they are terrible things because they trick you into thinking they really did resolve properly. Here is what you need to know so you don't go down a troubleshooting rabbit hole and never come out.
+
+When the LiveCode engine finds a control which has its behavior property set it tries to resolve the behavior reference in order to find the script. If, for any reason, the engine cannot find the script that is referenced by the behavior property then the engine will silently move along as if nothing bad has happened. But something bad has happened. The behavior script wasn't loaded so any functionality that the behavior script provided will not work. When might something like this happen?
+
+If you are storing your behaviors in script only stacks or a control in a stack that is not part of your main application then this might happen to you.
+
+### What should you do?
+
+A full-proof solution is to add each stack file that contains a behavior script to the `stackfiles` property of your main application stack. You can do this using the stack property inspector. By doing this the engine will always be able to track down the behavior when your application stack opens.
+
+Be aware that if you use `dvIdeCreateRowTemplates` to create row templates that a behavior will be stored in a script only stack. While this handler will assign the script only stack file to the `stackfiles` property of the stack that contains the row template, the script only stack file will not be assigned to the `stackfiles` property of your application stack. 
+
+For example, if your application stack 1) has a DataView in it and 2) you save the stack with row template groups loaded into the DataView then you must assign the row template behavior script only stack files to the `stackfiles` of your application stack. Otherwise when your application stack is loaded by the LiveCode engine it sees the row template groups, tries to resolve the behaviors assigned to them, can't find them, and you start wondering why your DataView is no longer functioning properly.
