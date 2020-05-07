@@ -3614,7 +3614,17 @@ end _configureScrollbars
 
 private command _setVScrollForPlatform pValue
   if sScrollerID is not empty then
+    if the platform is not "iphone" then
+      # https://quality.livecode.com/show_bug.cgi?id=18924
+      # https://quality.livecode.com/show_bug.cgi?id=22453
+      wait 0 milliseconds
+    end if
+
     mobileControlSet sScrollerID, "vScroll", pValue
+    # On Android the above doesn't trigger `scrollerDidScroll`
+    if the platform is not "iphone" then
+      _setVScroll pValue
+    end if
   else
     _setVScroll pValue
   end if
