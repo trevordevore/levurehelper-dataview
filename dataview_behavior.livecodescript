@@ -1523,6 +1523,54 @@ end viewProp
 
 
 /**
+Summary: Set the group control to be used for a specific row style.
+
+Parameters:
+pStyle: The row style.
+pCtrlRef: Long id of group control to associate with the style. Pass in empty to remove the style.
+
+Returns: nothing
+*/
+setProp dvRowStyleTemplate[pStyle] pCtrlRef
+  local tDataA
+
+  put the viewProp["row style templates"] of me into tDataA
+  if pCtrlRef is not empty then
+    put _customControlReference(pCtrlRef) into tDataA[pStyle]
+  else
+    delete variable tDataA[pStyle]
+  end if
+  set the viewProp["row style templates"] of me to tDataA
+end dvRowStyleTemplate
+
+
+/**
+Summary: Set the group control to be used for a specific row style.
+
+Parameters:
+pStyle: The row style.
+
+Description:
+This getter will return the long name of the group control associated
+with the style assuming the control exists. If the control does not exist
+then the internal reference is returned since the long name cannot be
+resolved.
+
+Returns: Id
+*/
+getProp dvRowStyleTemplate[pStyle]
+  local tDataA
+
+  put the viewProp["row style templates"] of me into tDataA
+  if there is a tDataA[pStyle] then
+    return the long name of tDataA[pStyle]
+  else
+    return tDataA[pStyle]
+  end if
+end dvRowStyleTemplate
+
+
+/**
 Summary: Defines the arrow key behavior for the control.
 
 Parameters:
