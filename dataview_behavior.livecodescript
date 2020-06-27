@@ -3621,10 +3621,7 @@ private command _setVScrollForPlatform pValue
     end if
 
     mobileControlSet sScrollerID, "vScroll", pValue
-    # On Android the above doesn't trigger `scrollerDidScroll`
-    if the platform is not "iphone" then
-      _setVScroll pValue
-    end if
+    _setVScroll pValue
   else
     _setVScroll pValue
   end if
