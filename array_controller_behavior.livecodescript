@@ -57,7 +57,7 @@ end CacheKeyForRow
 Summary: Deletes records from the source data array and refreshes the DataView with updated data source.
 
 Parameters:
-pRows: A comma-delimited list of ids to delete from the data source.
+pIds: A comma-delimited list of ids to delete from the data source.
 pRefreshView: Pass in false to prevent the view being refreshed.
 
 Returns: nothing
