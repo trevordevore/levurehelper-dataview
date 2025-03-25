@@ -2137,10 +2137,10 @@ on dvDragMove pMouseH, pMouseV, pDragMoveTarget
 
     # Make sure that this DataView is the actual target of the message. If the user drags over multiple DataViews
     # during a drag session then this instance will get the message even if it isn't the target.
-    if the mouseControl is not empty and the dvControl of the long id of the mousecontrol is the long id of me then
+    if controlAtLoc(the mouseLoc) is not empty and the dvControl of the long id of controlAtLoc(the mouseLoc) is the long id of me then
       local tTargetControlId
 
-      put the dvRowControl of the mouseControl into tTargetControlId
+      put the dvRowControl of controlAtLoc(the mouseLoc) into tTargetControlId
 
       if tTargetControlId is not empty then
         put the short id of tTargetControlId into tTargetControlId
@@ -5296,6 +5296,7 @@ private command _createDragImageFromControl pControlId
     reset the templateImage
     create image "dvDragImage" in group "dvListMask" of me
     set the visible of it to false
+    set the disabled of it to true
   end if
 
   unlock messages

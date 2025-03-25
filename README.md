@@ -372,6 +372,82 @@ command PositionDropIndicator pDraggingInfoA, pRow, pDropOperation
 end PositionDropIndicator
 ```
 
+### Mobile and web support for drag reordering
+
+Limited drag reordering support has been implemented for mobile and web using
+mouse events and by showing the drag image within the dataview. The drag image
+if used only moves vertically in the view. These drag
+operations are only supported within the one dataview. To initiate a drag
+reorder on mobile you need to script the drag detection with a dataview
+script such as:
+
+```
+local sDetectDrag = false
+on mouseDown
+  if (the platform is "web" or the environment is "mobile") then
+    put true into sDetectDrag
+  end if
+
+  pass mouseDown
+end mouseDown
+
+on mouseUp
+  if (the platform is "web" or the environment is "mobile") then
+    put false into sDetectDrag
+  end if
+
+  pass mouseUp
+end mouseUp
+
+on mouseRelease
+  if (the platform is "web" or the environment is "mobile") then
+    put false into sDetectDrag
+  end if
+
+  pass mouseRelease
+end mouseRelease
+
+on mouseMove \
+    pMouseH, \
+    pMouseV
+
+  if (the platform is "web" or the environment is "mobile") and \
+      sDetectDrag and \
+      _DragBegun(pMouseH, pMouseV) then
+    put false into sDetectDrag
+
+    /* Manually set the dragAction because the dragSource can not be used
+     * to detect a move */
+    set the dragAction to "move"
+    set the dragData["private"] to the dvRow of the dvRowControl of the target
+    set the dvDragImageRow of me to the dragData["private"]
+    set the dvTrackDragReorder of the dvControl of me to true
+  end if
+
+  pass mouseMove
+end mouseMove
+
+private function _DragBegun \
+    pMouseH, \
+    pMouseV
+
+  return abs(sqrt((clickH()  - pMouseH) ^ 2 \
+      + (clickV() - pMouseV) ^ 2 )) >= the dragDelta
+end _DragBegun
+```
+
+Additional decoration of the drag image for web and mobile can be implemented
+such as:
+
+```
+on PostDragImageSnapshot
+  if the platform is "web" or the environment is "mobile" then
+    set the blendLevel of image "dvDragImage" of me to 15
+    set the innerGlow["color"] of image "dvDragImage" of me to "0,0,255"
+  end if
+end PostDragImageSnapshot
+```
+
 ## A Note on Behaviors
 
 This is mainly for folks who aren't using the Levure framework as they are more likely to run into the situation described below. Levure makes sure that behaviors are loaded into memory before any stacks try to load them.
