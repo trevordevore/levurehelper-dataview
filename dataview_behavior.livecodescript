@@ -240,6 +240,8 @@ on scrollbarDrag pValue
       _setVScroll pValue ## in case messages are locked
       unlock messages
     end if
+  else if the short name of the target is "dvListMask" then
+    dispatch "DataViewDidUpdateView" to me
   end if
 end scrollbarDrag
 
@@ -1380,6 +1382,10 @@ getProp viewProp [pProp]
       end if
       break
 
+    case "hscroll"
+      return the hscroll of group "dvListMask" of me
+      break
+
     default
       return the viewProp[pProp] of me
   end switch
@@ -1440,7 +1446,7 @@ setProp viewProp [pProp] pValue
       _SetVScrollPercent pValue
       break
     case "hscroll"
-
+      set the hscroll of group "dvListMask" of me to pValue
       break
     case "scrollbar width"
       if pValue is not the viewProp[pProp] of me then
